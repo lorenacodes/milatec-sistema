@@ -1,0 +1,27 @@
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backups
+*.bak
+*.tmp
+
+# Scripts internos de migração (não fazem parte da aplicação web)
+audit_*.js
+backfill_*.js
+repair_*.js
+sync_*.js
+migrate.js
+rem_js.js
+
+# Documentos internos
+*.docx
+*.pdf
+PROMPT_*.md
+Prompt_*.md
+servidor.py
+*.bat
+
+# Pasta interna do Claude
+.claude/
