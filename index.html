@@ -1600,7 +1600,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
  <div class="modal-grid col2">
  <div class="mf">
  <label>Etapa do negócio <span class="req">*</span></label>
- <select id="no-etapa">
+ <select id="no-etapa" onchange="_selColorize(this,_SEL_ETAPA_NEGOCIO_COR)">
  <option value="">Selecione...</option>
  <option>Análise inicial</option>
  <option>Pré-projeto</option>
@@ -7851,6 +7851,7 @@ function openNovaObra() {
  const el = document.getElementById(id);
  if (el) el.selectedIndex = 0;
  });
+ _selColorize(document.getElementById('no-etapa'), _SEL_ETAPA_NEGOCIO_COR);
  // Resetar estado e cidade
  const estadoSel = document.getElementById('no-estado');
  estadoSel.value = '';
@@ -9288,7 +9289,7 @@ function _taskDrawerOpen(editId) {
  var tipoAtEl = get('nt-tipo-atividade');
  var areaEl   = get('nt-area');
  if (prioEl)   prioEl.value   = t ? (t.prioridade     || 'Média')   : 'Média';
- if (stEl)     stEl.value     = t ? (t.status          || 'A fazer') : 'A fazer';
+ if (stEl)     { stEl.value   = t ? (t.status          || 'A fazer') : 'A fazer'; _selColorize(stEl, _SEL_TASK_STATUS_COR); }
  if (tipoAtEl) tipoAtEl.value = t ? (t.tipo_atividade  || '')        : '';
  if (areaEl)   areaEl.value   = t ? (t.area            || '')        : '';
 
@@ -9855,6 +9856,34 @@ function _drwTab(name, btn) {
 
 /* ── SUBTAREFAS NO DRAWER ────────────────────────────────────────────────── */
 var _drwSubItems = []; // [{_id, titulo, responsavel, status, prazo, dt_conclusao}]
+
+// ── Cor nos <select> de status/etapa (estavam sem cor nenhuma, baixa
+// legibilidade) — aplica borda + fundo levemente tingido com a cor da opção
+// selecionada, no mesmo espírito dos badges coloridos já usados nos cards.
+var _SEL_ETAPA_NEGOCIO_COR = {
+ 'Análise inicial':'var(--muted)', 'Pré-projeto':'var(--muted)',
+ 'Follow-up':'var(--yellow)', 'Em Andamento':'var(--blue)',
+ 'Projeto aprovado':'var(--blue)', 'Concluído':'var(--green)'
+};
+var _SEL_TASK_STATUS_COR = {
+ 'Backlog':'var(--muted)', 'A fazer':'var(--navy)', 'Em progresso':'var(--yellow)',
+ 'Aguardando feedback':'rgba(139,92,246,1)', 'Feito':'var(--green)', 'Obsoleto':'var(--red)'
+};
+function _selColorize(sel, colorMap) {
+ if (!sel) return;
+ var c = colorMap[sel.value];
+ if (c) {
+  sel.style.borderColor = c;
+  sel.style.color = c;
+  sel.style.fontWeight = '600';
+  sel.style.background = 'color-mix(in srgb, ' + c + ' 14%, var(--surface2))';
+ } else {
+  sel.style.borderColor = '';
+  sel.style.color = '';
+  sel.style.fontWeight = '';
+  sel.style.background = '';
+ }
+}
 
 var _SUB_STATUS_COLORS = {
  'Não iniciado': '#64748b',
@@ -17897,7 +17926,7 @@ function _gestorKpiCard(title, value, color, icon, hint) {
      </div>
      <div>
       <label class="tf-lbl">Status <span class="tf-req">*</span></label>
-      <select id="nt-status" class="tf-sel">
+      <select id="nt-status" class="tf-sel" onchange="_selColorize(this,_SEL_TASK_STATUS_COR)">
        <option value="Backlog">Backlog</option>
        <option value="A fazer" selected>A fazer</option>
        <option value="Em progresso">Em progresso</option>
