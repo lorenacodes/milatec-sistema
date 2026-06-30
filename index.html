@@ -11463,10 +11463,6 @@ async function _dashLoad() {
  }
  var userEmail = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || '';
 
- // atividades.responsavel e projetos.responsavel agora são text[] de e-mail
- // (pós-migração). Filtro "contains" do PostgREST para array: column.cs.{valor}.
- var respOrExpr = userEmail ? ('responsavel.cs.{"' + userEmail.replace(/["{}]/g,'') + '"}') : '';
-
  await _loadUsuariosCache();
  await _loadAtividadeVinculosCache();
 
@@ -11478,12 +11474,14 @@ async function _dashLoad() {
   // (por data_prazo), todas já concluídas, e nunca viam as atividades em
   // aberto (mais recentes) no feed. Por isso paginamos com .range() até
   // trazer tudo, igual ao padrão já usado em _dbLoadObras/_dbLoadEmpresas.
+  // atividades.responsavel agora é text[] de e-mail — usamos .contains()
+  // (nativo do supabase-js) em vez de montar string crua para .or().
   async function _dashFetchPaginado(selectCols, extra) {
    var all = [], from = 0, pageSize = 1000, more = true;
    while (more) {
     var q = _sb.from('atividades').select(selectCols);
     if (extra) q = extra(q);
-    if (respOrExpr) q = q.or(respOrExpr);
+    if (userEmail) q = q.contains('responsavel', [userEmail]);
     q = q.range(from, from + pageSize - 1);
     var r = await q;
     if (r.error) { console.error('[Dashboard] erro paginando atividades:', r.error); break; }
@@ -11519,7 +11517,7 @@ async function _dashLoad() {
    .select('id, nome, obra_id, etapa_projeto, responsavel, created_at, obra:obra_id(nome, empresas_obras(empresa:empresa_id(nome)))')
    .order('created_at', { ascending: false })
    .limit(200);
-  if (respOrExpr) projQ = projQ.or(respOrExpr);
+  if (userEmail) projQ = projQ.contains('responsavel', [userEmail]);
 
   var [allAt, areaAt, semAt, projRes] = await Promise.all([atPromise, areaPromise, semPromise, projQ]);
 
