@@ -6865,7 +6865,7 @@ async function _spObraById(id) {
   const [obraRes, projRes, entregasRes, instRes] = await Promise.all([
    _sb.from('obras').select('*, empresas_obras(empresa_id,empresa:empresa_id(id,nome,cnpj)), contatos_obras(contato_id,contato:contato_id(id,nome_completo))').eq('id', id).single(),
    _sb.from('projetos').select('*').eq('obra_id', id).order('created_at'),
-   _sb.from('entregas').select('*').eq('obra_id', id).order('data_inicio'),
+   _sb.from('entregas').select('*').eq('obra_id', id).order('data_faturamento', { ascending: false, nullsFirst: false }),
    _sb.from('instalacoes').select('*').eq('obra_id', id).order('data_inicio')
   ]);
 
@@ -6873,6 +6873,8 @@ async function _spObraById(id) {
    _spSet('Obra', 'Erro', '<div style="color:var(--red);padding:20px">Obra não encontrada: ' + obraRes.error.message + '</div>', '');
    return;
   }
+  if (entregasRes.error) console.error('[MilaTec] Erro ao carregar entregas:', entregasRes.error);
+  if (instRes.error) console.error('[MilaTec] Erro ao carregar instalações:', instRes.error);
 
   const projetos  = projRes.data || [];
   projetos.forEach(function(p){ if (Array.isArray(p.responsavel)) p.responsavel = _emailsToNomes(p.responsavel); });
@@ -7311,17 +7313,16 @@ function _spObrasRender(o, projetos, entregas, instalacoes) {
  var entregaCards = entregas.length
   ? entregas.map(function(e){
      return '<div class="sp-item-card">'
-      + '<div class="sp-item-title">' + (e.tipo_servico || '(sem tipo)') + '</div>'
+      + '<div class="sp-item-title">' + (e.nome_entrega || '(sem nome)') + '</div>'
       + '<div class="sp-item-meta">'
-      + (e.funil ? '<span>Funil: <b>' + e.funil + '</b></span><span style="color:var(--border)">|</span>' : '')
-      + '<span>Inicio: <b>' + fmtData(e.data_inicio) + '</b></span>'
+      + (e.etapa ? '<span>Etapa: <b>' + e.etapa + '</b></span><span style="color:var(--border)">|</span>' : '')
+      + '<span>Quantidade: <b>' + (e.quantidade != null ? e.quantidade : '—') + '</b></span>'
       + '<span style="color:var(--border)">|</span>'
-      + '<span>Fim: <b>' + fmtData(e.data_fim) + '</b></span>'
-      + '<span style="color:var(--border)">|</span>'
-      + '<span>Duração: <b>' + fmtDias(e.dias_executados) + '</b></span>'
+      + '<span>Faturamento: <b>' + fmtData(e.data_faturamento) + '</b></span>'
+      + (e.transporte ? '<span style="color:var(--border)">|</span><span>Transporte: <b>' + e.transporte + '</b></span>' : '')
       + '</div>'
-      + (e.valor_total_gasto ? '<div style="margin-top:6px;font-size:12px;font-weight:600;color:var(--green)">' + fmtMoeda(e.valor_total_gasto) + '</div>' : '')
-      + (e.detalhes ? '<div style="margin-top:4px;font-size:11px;color:var(--muted)">' + e.detalhes + '</div>' : '')
+      + (e.valor ? '<div style="margin-top:6px;font-size:12px;font-weight:600;color:var(--green)">' + fmtMoeda(e.valor) + '</div>' : '')
+      + (e.endereco_entrega ? '<div style="margin-top:4px;font-size:11px;color:var(--muted)">' + e.endereco_entrega + '</div>' : '')
       + '</div>';
     }).join('')
   : '<div class="sp-empty">Nenhuma entrega registrada para esta obra</div>';
