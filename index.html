@@ -5379,6 +5379,7 @@ async function _renderProjetosKanban() {
  }
 
  var data     = res.data;
+ data.forEach(function(p){ if (Array.isArray(p.responsavel)) p.responsavel = _emailsToNomes(p.responsavel); });
  var tipoCls  = {'Telhados':'bg','Steel Frame':'bp','Modular':'bb','Solar':'by'};
  var complCls = {'Simples':'bg','Média':'by','Média - simples':'by','Complexa':'br','Alta':'br'};
  var etapaCls = {
@@ -5644,7 +5645,7 @@ async function _spGerarProposta() {
      obra_id: o.id || null,
      empresa_id: o.empresa_id || null,
      tipo: 'Proposta Comercial',
-     nome: 'Proposta ' + numero + ' — ' + prod,
+     nome_arquivo: 'Proposta ' + numero + ' — ' + prod,
      status: 'Gerada',
      versao: versao,
      criado_por: geradoPor,
@@ -6327,10 +6328,115 @@ var _empresasArr = []; // cache: [{id, nome, cnpj, estado}]
 var _contatosArr = []; // cache: [{id, nome_completo, empresa_id, cargo, email, telefone}]
 var _obraAtiva   = null; // obra aberta atualmente no painel
 
+// ── Compat. pós-migração: atividades.responsavel e projetos.responsavel agora são
+// text[] de e-mails (antes era texto único com nomes separados por vírgula), e
+// obra_id/projeto_id/melhoria_id deixaram de ser colunas diretas em atividades
+// (viraram junctions atividades_obras/atividades_projetos/atividades_melhorias).
+// Os helpers abaixo isolam essa mudança para não precisar reescrever toda a UI.
+var _usuariosCache = null; // [{id, email, nome_display}]
+async function _loadUsuariosCache() {
+ if (_usuariosCache) return _usuariosCache;
+ try {
+  var r = await _sb.from('usuarios').select('id, email, nome_display');
+  _usuariosCache = (r.data || []);
+ } catch(e) { _usuariosCache = []; }
+ return _usuariosCache;
+}
+// Converte array de e-mails (text[]) em string "Nome1, Nome2" (formato que a UI antiga espera).
+function _emailsToNomes(emails) {
+ if (!emails) return '';
+ var arr = Array.isArray(emails) ? emails : [emails];
+ var cache = _usuariosCache || [];
+ return arr.map(function(em) {
+  var u = cache.find(function(x){ return x.email === em; });
+  return (u && u.nome_display) || em;
+ }).filter(Boolean).join(', ');
+}
+// Converte string digitada ("Nome1, Nome2" ou um nome só) em array de e-mails.
+// Nomes sem usuário cadastrado correspondente são mantidos como string crua
+// (não há perda de dado, só não casam com um usuario_id em atividades_responsaveis).
+function _nomesStrToEmails(str) {
+ if (!str) return null;
+ var cache = _usuariosCache || [];
+ var partes = String(str).split(/[,;]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+ if (!partes.length) return null;
+ var emails = partes.map(function(nome) {
+  var u = cache.find(function(x){
+   return x.email === nome || x.nome_display === nome || (x.nome_display||'').split(' ')[0] === nome;
+  });
+  return (u && u.email) || nome;
+ });
+ return emails;
+}
+
+// Cache de vínculos atividade → obra/projeto/melhoria (agora vivem em junction tables)
+var _avObraMap = null, _avProjMap = null, _avMelhMap = null; // atividade_id -> id (primeiro vínculo)
+async function _loadAtividadeVinculosCache() {
+ if (_avObraMap) return;
+ _avObraMap = {}; _avProjMap = {}; _avMelhMap = {};
+ async function pageAll(table, col) {
+  var map = {}, pg = 0, sz = 1000;
+  while (true) {
+   var r = await _sb.from(table).select('atividade_id,' + col).range(pg*sz, (pg+1)*sz-1);
+   if (r.error || !r.data || !r.data.length) break;
+   r.data.forEach(function(row){ if (!map[row.atividade_id]) map[row.atividade_id] = row[col]; });
+   if (r.data.length < sz) break;
+   pg++;
+  }
+  return map;
+ }
+ var [om, pm, mm] = await Promise.all([
+  pageAll('atividades_obras', 'obra_id'),
+  pageAll('atividades_projetos', 'projeto_id'),
+  pageAll('atividades_melhorias', 'melhoria_id'),
+ ]);
+ _avObraMap = om; _avProjMap = pm; _avMelhMap = mm;
+}
+// Enriquece uma lista de atividades (já buscadas do Supabase) com obra_id/projeto_id/
+// melhoria_id (lidos da junction) e converte responsavel (array) em string de nomes.
+function _enrichAtividades(rows) {
+ (rows || []).forEach(function(a) {
+  if (a.obra_id === undefined)     a.obra_id     = (_avObraMap  && _avObraMap[a.id])  || null;
+  if (a.projeto_id === undefined)  a.projeto_id  = (_avProjMap  && _avProjMap[a.id])  || null;
+  if (a.melhoria_id === undefined) a.melhoria_id = (_avMelhMap  && _avMelhMap[a.id])  || null;
+  if (Array.isArray(a.responsavel)) a.responsavel = _emailsToNomes(a.responsavel);
+ });
+ return rows;
+}
+// Grava (upsert) os vínculos N:N de uma atividade nas junction tables, substituindo
+// os vínculos anteriores de obra/projeto/melhoria por, no máximo, um novo de cada.
+async function _syncAtividadeVinculos(atividadeId, obraId, projetoId, melhoriaId) {
+ try {
+  await _sb.from('atividades_obras').delete().eq('atividade_id', atividadeId);
+  if (obraId) await _sb.from('atividades_obras').insert({ atividade_id: atividadeId, obra_id: obraId });
+  await _sb.from('atividades_projetos').delete().eq('atividade_id', atividadeId);
+  if (projetoId) await _sb.from('atividades_projetos').insert({ atividade_id: atividadeId, projeto_id: projetoId });
+  await _sb.from('atividades_melhorias').delete().eq('atividade_id', atividadeId);
+  if (melhoriaId) await _sb.from('atividades_melhorias').insert({ atividade_id: atividadeId, melhoria_id: melhoriaId });
+  if (_avObraMap) { _avObraMap[atividadeId] = obraId || null; _avProjMap[atividadeId] = projetoId || null; _avMelhMap[atividadeId] = melhoriaId || null; }
+ } catch(e) { console.error('[_syncAtividadeVinculos] erro:', e); }
+}
+// Grava (upsert) os responsáveis de uma atividade em atividades_responsaveis,
+// resolvendo e-mail → usuario_id (e-mails sem usuário cadastrado são ignorados aqui,
+// mas continuam visíveis no array atividades.responsavel).
+async function _syncAtividadeResponsaveis(atividadeId, emails) {
+ try {
+  await _sb.from('atividades_responsaveis').delete().eq('atividade_id', atividadeId);
+  var cache = await _loadUsuariosCache();
+  var arr = Array.isArray(emails) ? emails : (emails ? [emails] : []);
+  var links = arr.map(function(em) {
+   var u = cache.find(function(x){ return x.email === em; });
+   return u ? { atividade_id: atividadeId, usuario_id: u.id } : null;
+  }).filter(Boolean);
+  if (links.length) await _sb.from('atividades_responsaveis').insert(links);
+ } catch(e) { console.error('[_syncAtividadeResponsaveis] erro:', e); }
+}
+
 async function _dbInit() {
  try {
   const { error } = await _sb.from('obras').select('id').limit(1);
   _dbOk = !error;
+  if (_dbOk) _loadUsuariosCache(); // dispara em segundo plano, não bloqueia o init
  } catch(e) { _dbOk = false; }
  const dot = document.getElementById('db-dot');
  const lbl = document.getElementById('db-label');
@@ -6769,6 +6875,7 @@ async function _spObraById(id) {
   }
 
   const projetos  = projRes.data || [];
+  projetos.forEach(function(p){ if (Array.isArray(p.responsavel)) p.responsavel = _emailsToNomes(p.responsavel); });
   const entregas  = entregasRes.data || [];
   const instalacoes = instRes.data || [];
   console.log('[MilaTec] Obra:', obraRes.data?.nome, '| Proj:', projetos.length, '| Ent:', entregas.length, '| Inst:', instalacoes.length);
@@ -8304,6 +8411,7 @@ async function _remAbrirAtividade(ativId) {
     .eq('id', ativId)
     .single();
    ativ = res.data;
+   if (ativ && Array.isArray(ativ.responsavel)) ativ.responsavel = _emailsToNomes(ativ.responsavel);
   } catch(e) { ativ = null; }
  }
  if (!ativ) { _showToast('Atividade não encontrada', 'erro'); return; }
@@ -10369,6 +10477,7 @@ function _submitNewTask() {
 
    if (idx === -1) {
     // ── Atividade do Supabase (não está em _dashTasks) — UPDATE direto ────
+    var respEmails = _nomesStrToEmails(mae.responsavel);
     var sbPayload = {
      titulo:          mae.titulo,
      status:          mae.status,
@@ -10377,11 +10486,8 @@ function _submitNewTask() {
      tipo_atividade:  mae.tipo_atividade,
      data_inicio:     mae.data_inicio  || null,
      data_prazo:      mae.data_fim     || null,
-     responsavel:     mae.responsavel  || null,
+     responsavel:     respEmails,
      observacoes:     mae.observacoes  || null,
-     obra_id:         mae.obra_id      || null,
-     projeto_id:      mae.projeto_id   || null,
-     melhoria_id:     mae.melhoria_id  || null,
      subtasks:        subtasksParaSalvar,
      visibilidade:    privVisibilidade,
      updated_at:      new Date().toISOString()
@@ -10394,15 +10500,17 @@ function _submitNewTask() {
        _showToast('Erro ao salvar: ' + _supaErrPt(res.error.message), 'erro');
       } else {
        _privSaveShares(_taskEditId, privModo, privShares);
+       _syncAtividadeVinculos(_taskEditId, mae.obra_id || null, mae.projeto_id || null, mae.melhoria_id || null);
+       _syncAtividadeResponsaveis(_taskEditId, respEmails);
        _showToast('Atividade atualizada no sistema!', 'ok');
        _histLogAdd('editou', mae.titulo, 'Status: ' + mae.status + ' · Prazo: ' + (mae.data_fim || '—'));
        _histBadgeUpdate();
        // Atualizar item no cache do gestor com os novos valores e vínculos
        var gIdx = _gestorAllAt.findIndex(function(x){ return String(x.id) === String(_taskEditId); });
        if (gIdx !== -1) {
-        Object.assign(_gestorAllAt[gIdx], sbPayload);
-        _gestorAllAt[gIdx]._obraNome = sbPayload.obra_id ? (_gestorObrasMap[String(sbPayload.obra_id)] || '') : '';
-        _gestorAllAt[gIdx]._projNome = sbPayload.projeto_id ? (_gestorProjMap[String(sbPayload.projeto_id)] || '') : '';
+        Object.assign(_gestorAllAt[gIdx], sbPayload, { obra_id: mae.obra_id || null, projeto_id: mae.projeto_id || null, melhoria_id: mae.melhoria_id || null, responsavel: mae.responsavel });
+        _gestorAllAt[gIdx]._obraNome = mae.obra_id ? (_gestorObrasMap[String(mae.obra_id)] || '') : '';
+        _gestorAllAt[gIdx]._projNome = mae.projeto_id ? (_gestorProjMap[String(mae.projeto_id)] || '') : '';
         _gestorApplyFilters();
        }
        _dashLoad(); // recarrega feed e KPIs
@@ -10450,17 +10558,15 @@ function _submitNewTask() {
     _showToast('Sem conexão com o banco. Não é possível criar a atividade agora.', 'erro');
     return;
    }
+   var respEmails = _nomesStrToEmails(mae.responsavel);
    var linhaBase = {
     titulo:         mae.titulo,
     tipo_atividade: mae.tipo_atividade,
     area:           mae.area,
-    responsavel:    mae.responsavel || null,
+    responsavel:    respEmails,
     prioridade:     mae.prioridade,
     status:         mae.status,
     observacoes:    mae.observacoes || null,
-    obra_id:        mae.obra_id     || null,
-    projeto_id:     mae.projeto_id  || null,
-    melhoria_id:    mae.melhoria_id || null,
     frequencia:     recorre === 'sim' ? (mae.freq_val + ' ' + freqUnit) : null,
     criado_por:     (_currentUser && _currentUser.id) || null,
     visibilidade:   privVisibilidade
@@ -10509,6 +10615,11 @@ function _submitNewTask() {
      if (res.data && res.data[0] && res.data[0].id) {
       _privSaveShares(res.data[0].id, privModo, privShares);
      }
+     // Vínculos de obra/projeto/melhoria e responsáveis (agora vivem em junction tables)
+     (res.data || []).forEach(function(row) {
+      _syncAtividadeVinculos(row.id, mae.obra_id || null, mae.projeto_id || null, mae.melhoria_id || null);
+      _syncAtividadeResponsaveis(row.id, respEmails);
+     });
      var totalFilhos = linhas.length - 1;
      _histLogAdd('criou', mae.titulo, recorre === 'sim'
       ? 'Série recorrente: ' + linhas.length + ' ocorrências'
@@ -10716,17 +10827,18 @@ function _projDrawerLoad() {
   return;
  }
  list.innerHTML = '<div class="proj-drw-empty">Carregando projetos...</div>';
- var firstName = (localStorage.getItem('pp-name') || 'Lorena').split(' ')[0];
- _sb.from('projetos')
+ var userEmail = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || '';
+ var projQDrw = _sb.from('projetos')
   .select('id, nome, etapa_projeto, complexidade, responsavel, obra_id, obra:obra_id(nome, empresas_obras(empresa:empresa_id(nome)))')
-  .ilike('responsavel', '%' + firstName + '%')
   .order('created_at', { ascending: false })
-  .limit(100)
-  .then(function(res) {
+  .limit(100);
+ if (userEmail) projQDrw = projQDrw.contains('responsavel', [userEmail]);
+ projQDrw.then(function(res) {
    if (res.error || !res.data) {
     list.innerHTML = '<div class="proj-drw-empty">Erro ao carregar projetos.</div>';
     return;
    }
+   res.data.forEach(function(p){ if (Array.isArray(p.responsavel)) p.responsavel = _emailsToNomes(p.responsavel); });
    _projDrawerData = res.data;
    window._projDrawerCache = res.data;
    _projDrawerRender();
@@ -11351,30 +11463,12 @@ async function _dashLoad() {
  }
  var userEmail = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || '';
 
- // O campo atividades.responsavel guarda NOMES (ex.: "Lorena Cardoso, Luis Araujo"),
- // nunca e-mail — por isso o filtro precisa ser por nome, não por userEmail.
- var userNomeCompleto = '';
- try {
-  if (_sb && _currentUser) {
-   var urQ = await _sb.from('usuarios').select('nome_display').eq('id', _currentUser.id).maybeSingle();
-   if (urQ.data && urQ.data.nome_display) userNomeCompleto = urQ.data.nome_display;
-  }
- } catch(eUr) {}
- if (!userNomeCompleto) userNomeCompleto = localStorage.getItem('pp-name') || (userEmail ? userEmail.split('@')[0] : '');
- var userPrimeiroNome = userNomeCompleto.split(' ')[0] || '';
- // Variantes sem acento, para cobrir nomes cadastrados de forma diferente entre usuarios e atividades
- var _stripAcc = function(s){ return (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,''); };
- var nomeVariantes = [];
- [userNomeCompleto, userPrimeiroNome].forEach(function(v) {
-  if (!v) return;
-  if (nomeVariantes.indexOf(v) === -1) nomeVariantes.push(v);
-  var semAcento = _stripAcc(v);
-  if (semAcento !== v && nomeVariantes.indexOf(semAcento) === -1) nomeVariantes.push(semAcento);
- });
- // Filtro OR combinando todas as variantes de nome (e e-mail, como variante extra de segurança)
- var respOrExpr = nomeVariantes.concat(userEmail ? [userEmail] : [])
-  .map(function(v){ return 'responsavel.ilike.%' + v.replace(/[%,()]/g, '') + '%'; })
-  .join(',');
+ // atividades.responsavel e projetos.responsavel agora são text[] de e-mail
+ // (pós-migração). Filtro "contains" do PostgREST para array: column.cs.{valor}.
+ var respOrExpr = userEmail ? ('responsavel.cs.{"' + userEmail.replace(/["{}]/g,'') + '"}') : '';
+
+ await _loadUsuariosCache();
+ await _loadAtividadeVinculosCache();
 
  try {
   // ── Todas as atividades do usuário (para KPIs + gráficos) ─────────────────
@@ -11402,9 +11496,9 @@ async function _dashLoad() {
   }
 
   var atPromise = _dashFetchPaginado(
-   'id, titulo, observacoes, status, prioridade, area, tipo_atividade, data_prazo, data_inicio, responsavel, updated_at, obra_id, projeto_id, melhoria_id, subtasks, visibilidade, criado_por',
+   'id, titulo, observacoes, status, prioridade, area, tipo_atividade, data_prazo, data_inicio, responsavel, updated_at, subtasks, visibilidade, criado_por',
    function(q){ return q.order('data_prazo', { ascending: true }); }
-  );
+  ).then(function(rows){ return _enrichAtividades(rows); });
 
   // ── Por área (para gráfico) ───────────────────────────────────────────────
   var areaPromise = _dashFetchPaginado('area, status');
@@ -11430,6 +11524,7 @@ async function _dashLoad() {
   var [allAt, areaAt, semAt, projRes] = await Promise.all([atPromise, areaPromise, semPromise, projQ]);
 
   var meusProjetos = projRes.data || [];
+  meusProjetos.forEach(function(p){ if (Array.isArray(p.responsavel)) p.responsavel = _emailsToNomes(p.responsavel); });
   // Armazena no cache global para re-renders sem nova query
   _dashAllAtRaw   = allAt;
   _dashSemanasRaw = semAt;
@@ -14651,6 +14746,7 @@ async function _dbLoadProjetos() {
   if(tbody)tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Nenhum projeto encontrado.</td></tr>';
   return;
  }
+ allData.forEach(function(p){ if (Array.isArray(p.responsavel)) p.responsavel = _emailsToNomes(p.responsavel); });
  _projetosArr=allData;
  if(!tbody)return;
  function _pad3(n){var s=String(n);while(s.length<3)s='0'+s;return s;}
@@ -16632,7 +16728,9 @@ async function _gestorLoad() {
    _lookupPage('obras',     _gestorObrasMap),
    _lookupPage('projetos',  _gestorProjMap),
    _lookupPage('melhorias', _gestorMelhMap),
-   _lookupProjEtapas()
+   _lookupProjEtapas(),
+   _loadAtividadeVinculosCache(),
+   _loadUsuariosCache()
   ]);
   console.log('[Gestor] lookups:', Object.keys(_gestorObrasMap).length, 'obras,', Object.keys(_gestorProjMap).length, 'projetos,', Object.keys(_gestorMelhMap).length, 'melhorias');
 
@@ -16654,7 +16752,10 @@ async function _gestorLoad() {
   }
 
   // ── 3. Enriquecer vínculos via lookup maps ─────────────────────────────
-  // Os nomes são resolvidos via obra_id/projeto_id/melhoria_id → mapas de lookup
+  // obra_id/projeto_id/melhoria_id não são mais colunas diretas em atividades
+  // (vivem em junctions) e responsavel agora é text[] de e-mail — _enrichAtividades
+  // repõe os 3 ids a partir do cache de junctions e converte responsavel em string.
+  _enrichAtividades(allData);
   allData.forEach(function(a) {
    a._obraNome = a.obra_id    ? (_gestorObrasMap[String(a.obra_id)]    || '') : '';
    a._projNome = a.projeto_id ? (_gestorProjMap[String(a.projeto_id)]  || '') : '';
