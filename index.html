@@ -9881,7 +9881,7 @@ function _drwSubRender() {
   return '<div class="drw-sub-item" id="drw-sub-item-' + idx + '">'
    + '<div class="drw-sub-item-hd">'
    + '<div class="drw-sub-status-dot" style="background:' + cor + '" title="' + s.status + '"></div>'
-   + '<span class="drw-sub-titulo">' + (s.titulo || '(sem título)') + '</span>'
+   + '<span class="drw-sub-titulo" onclick="_drwSubTitleEdit(' + idx + ')" title="Clique para editar o título" style="cursor:text">' + (s.titulo || '<i style="color:var(--muted)">(sem título — clique para definir)</i>') + '</span>'
    + '<button class="drw-sub-del" onclick="_drwSubDelete(' + idx + ')" title="Remover">&times;</button>'
    + '</div>'
    + '<div style="margin:5px 0 4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
@@ -9984,32 +9984,43 @@ function _drwSubBadge() {
 function _drwSubAdd() {
  _drwSubItems.push({ _id: Date.now(), titulo: '', responsavel: '', status: 'Não iniciado', prazo: '', dt_conclusao: '' });
  _drwSubRender();
- // Focar no input título do item recém-criado
- setTimeout(function() {
-  var items = document.querySelectorAll('.drw-sub-titulo');
-  var last = items[items.length - 1];
-  if (last) { last.contentEditable = 'true'; last.focus(); }
-  // Melhor: focar no select de status não funciona bem. Abre um input de título inline.
-  var idx = _drwSubItems.length - 1;
-  var item = document.getElementById('drw-sub-item-' + idx);
-  if (item) {
-   var titEl = item.querySelector('.drw-sub-titulo');
-   if (titEl) {
-    // Substituir span por input temporário
-    var inp = document.createElement('input');
-    inp.className = 'drw-sub-inp';
-    inp.style.flex = '1';
-    inp.style.fontSize = '12px';
-    inp.style.fontWeight = '600';
-    inp.placeholder = 'Título da subtarefa...';
-    inp.value = _drwSubItems[idx].titulo;
-    inp.onblur = function() { _drwSubField(idx, 'titulo', inp.value); _drwSubRender(); };
-    inp.onkeydown = function(e) { if (e.key === 'Enter') { inp.blur(); } };
-    titEl.replaceWith(inp);
-    inp.focus();
-   }
+ // Abre o título já em modo de edição para a subtarefa recém-criada
+ setTimeout(function() { _drwSubTitleEdit(_drwSubItems.length - 1, true); }, 50);
+}
+
+// Troca o <span> de título por um <input> editável (clique a qualquer momento,
+// não só na criação) — corrige bug onde o título só podia ser definido uma vez.
+// isNew: true quando aberto logo após _drwSubAdd — Enter aqui cria a próxima
+// subtarefa em seguida (fluxo rápido de digitar várias seguidas).
+function _drwSubTitleEdit(idx, isNew) {
+ var item = document.getElementById('drw-sub-item-' + idx);
+ if (!item || !_drwSubItems[idx]) return;
+ var titEl = item.querySelector('.drw-sub-titulo');
+ if (!titEl || titEl.tagName === 'INPUT') return; // já em edição
+ var inp = document.createElement('input');
+ inp.className = 'drw-sub-inp drw-sub-titulo';
+ inp.style.flex = '1';
+ inp.style.fontSize = '12px';
+ inp.style.fontWeight = '600';
+ inp.placeholder = 'Título da subtarefa...';
+ inp.value = _drwSubItems[idx].titulo || '';
+ var commit = function() { _drwSubField(idx, 'titulo', inp.value.trim()); _drwSubRender(); };
+ inp.onblur = commit;
+ inp.onkeydown = function(e) {
+  if (e.key === 'Enter') {
+   e.preventDefault();
+   var valor = inp.value.trim();
+   var criarProxima = isNew && valor && idx === _drwSubItems.length - 1;
+   inp.onblur = null; // evita commit duplicado pelo blur logo abaixo
+   _drwSubField(idx, 'titulo', valor);
+   _drwSubRender();
+   if (criarProxima) _drwSubAdd();
   }
- }, 50);
+  if (e.key === 'Escape') { e.preventDefault(); inp.value = _drwSubItems[idx].titulo || ''; inp.blur(); }
+ };
+ titEl.replaceWith(inp);
+ inp.focus();
+ inp.select();
 }
 
 function _drwSubDelete(idx) {
