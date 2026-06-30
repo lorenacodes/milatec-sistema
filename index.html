@@ -14282,9 +14282,17 @@ async function _forgotPwdSubmit() {
  btn.style.display='none';
 }
 function _logout() {
+ // Recarrega a página inteira após o signOut: a SPA mantém dezenas de caches
+ // em memória (usuarios, projetos, atividades, avatar, nome...) que nunca
+ // eram limpos ao trocar de conta, fazendo dados do usuário anterior
+ // aparecerem misturados com os do novo login. Reload garante estado limpo.
  _sb.auth.signOut().then(function(){
-  _currentUser = null; localStorage.removeItem('milatec-user-email');
-  var ls = document.getElementById('login-screen'); if (ls) ls.style.display = 'flex';
+  localStorage.removeItem('milatec-user-email');
+  localStorage.removeItem('pp-name');
+  localStorage.removeItem('pp-avatar');
+  window.location.reload();
+ }).catch(function(){
+  window.location.reload();
  });
 }
 
@@ -16315,6 +16323,12 @@ _cpwdStrength = function(val) {
  // Expõe ao window para uso em applyTheme
  window._LOGO_W = _LW;
  window._LOGO_C = _LC;
+
+ // Favicon (aba do navegador) — reusa o logo já embarcado, já que não há
+ // um ícone quadrado dedicado.
+ var _fav = document.querySelector('link[rel="icon"]');
+ if (!_fav) { _fav = document.createElement('link'); _fav.rel = 'icon'; document.head.appendChild(_fav); }
+ _fav.href = _LC;
 
  // Sidebar está no DOM antes deste script — pode aplicar imediatamente
  var sbLogo = document.getElementById('sidebar-logo');
