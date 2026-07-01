@@ -1697,22 +1697,18 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 
  </div>
 
- <!-- Criar projeto vinculado -->
+ <!-- Projetos vinculados -->
  <div class="modal-divider"></div>
- <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
- <input type="checkbox" id="no-criar-projeto" style="width:15px;height:15px;cursor:pointer" onchange="document.getElementById('no-projeto-fields').style.display=this.checked?'block':'none'">
- <label for="no-criar-projeto" style="font-size:12px;font-weight:600;cursor:pointer;color:var(--text)">Criar projeto vinculado à obra</label>
+ <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 10px">
+  <div>
+   <div style="font-size:12px;font-weight:700;color:var(--text)">Projetos da obra</div>
+   <div style="font-size:11px;color:var(--muted);margin-top:1px">Opcional — adicione um ou mais projetos já vinculados a esta obra</div>
+  </div>
+  <button type="button" onclick="_noProjAdd()" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 12px;border:1px solid var(--navy);border-radius:6px;background:transparent;color:var(--navy);cursor:pointer">
+   <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"/></svg> Adicionar projeto
+  </button>
  </div>
- <div id="no-projeto-fields" style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
- <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Projeto inicial</div>
- <div class="modal-grid col2" style="gap:8px">
- <div class="mf" style="margin:0"><label style="font-size:10px">Nome do projeto</label><input id="no-proj-nome" class="sp-inp" placeholder="Deixe em branco para usar o nome da obra"></div>
- <div class="mf" style="margin:0"><label style="font-size:10px">Etapa do projeto</label>
- <select id="no-proj-etapa" class="sp-inp">
- <option>Proposta Enviada</option><option>Anteprojeto</option><option>Projeto Executivo</option><option>Em Produção</option><option>Concluído</option>
- </select></div>
- </div>
- </div>
+ <div id="no-projetos-lista" style="display:flex;flex-direction:column;gap:8px"></div>
 
  <div class="modal-footer" style="margin-top:16px">
  <div class="modal-footer-hint">Campos com <span>*</span> são obrigatórios</div>
@@ -8189,11 +8185,12 @@ function openNovaObra() {
  var cntSel = document.getElementById('no-contato-id');
  if (cntSel) cntSel.innerHTML = '<option value="">Selecione primeiro a empresa...</option>';
 
- // Oculta boxes inline
- ['no-nova-empresa-box','no-novo-contato-box','no-projeto-fields'].forEach(function(id){
+ // Oculta boxes inline e reseta lista de projetos
+ ['no-nova-empresa-box','no-novo-contato-box'].forEach(function(id){
   var el = document.getElementById(id); if (el) el.style.display = 'none';
  });
- var chk = document.getElementById('no-criar-projeto'); if (chk) chk.checked = false;
+ _noProjLista = [];
+ _noProjRender();
 
  // Estado/cidade
  var estadoSel = document.getElementById('no-estado');
@@ -8322,7 +8319,6 @@ async function submitNovaObra() {
  var etapa     = document.getElementById('no-etapa')?.value || '';
  var canal     = document.getElementById('no-canal')?.value || null;
  var tipo      = _selectedTipo;
- var criarProj = document.getElementById('no-criar-projeto')?.checked;
 
  // Validação
  var erros = [];
@@ -8363,14 +8359,18 @@ async function submitNovaObra() {
    await _sb.from('contatos_obras').insert({ obra_id: obraId, contato_id: contatoId });
   }
 
-  // 4. Criar projeto vinculado (se checkbox marcado)
-  if (criarProj) {
-   var projNome = (document.getElementById('no-proj-nome')?.value || '').trim() || nome;
-   var projEtapa = document.getElementById('no-proj-etapa')?.value || 'Proposta Enviada';
-   await _sb.from('projetos').insert({
-    nome: projNome, obra_id: obraId, empresa_id: empresaId,
-    tipo_orcamento: tipo, etapa_projeto: projEtapa,
-   });
+  // 4. Criar projetos vinculados
+  if (_noProjLista.length) {
+   for (var pi = 0; pi < _noProjLista.length; pi++) {
+    var pItem = _noProjLista[pi];
+    await _sb.from('projetos').insert({
+     nome: (pItem.nome || '').trim() || nome,
+     obra_id: obraId,
+     empresa_id: empresaId || null,
+     tipo_orcamento: pItem.tipo || tipo,
+     etapa_projeto: pItem.etapa || 'Proposta Enviada',
+    });
+   }
   }
 
   _showToast('Obra criada com sucesso!', 'ok');
@@ -8383,6 +8383,46 @@ async function submitNovaObra() {
  } finally {
   if (btn) { btn.disabled = false; btn.textContent = 'Criar obra'; }
  }
+}
+
+/* ── Projetos dinâmicos no formulário de Nova Obra ─────────────────────────── */
+var _noProjLista = []; // [{nome, tipo, etapa}]
+
+function _noProjAdd() {
+ _noProjLista.push({ nome: '', tipo: '', etapa: 'Proposta Enviada' });
+ _noProjRender();
+}
+
+function _noProjRemove(idx) {
+ _noProjLista.splice(idx, 1);
+ _noProjRender();
+}
+
+function _noProjRender() {
+ var container = document.getElementById('no-projetos-lista');
+ if (!container) return;
+ if (!_noProjLista.length) {
+  container.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px 0">Nenhum projeto adicionado. Você pode criar projetos depois, na página da obra.</div>';
+  return;
+ }
+ var tipoOpts = ['Telhados','Modular','Steel Frame','Solar'].map(function(t){ return '<option>'+t+'</option>'; }).join('');
+ var etapaOpts = ['Proposta Enviada','Anteprojeto','Projeto Executivo','Em Produção','Concluído'].map(function(e){ return '<option>'+e+'</option>'; }).join('');
+ container.innerHTML = _noProjLista.map(function(p, idx) {
+  return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;position:relative">'
+   + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+   + '<span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Projeto ' + (idx+1) + '</span>'
+   + '<button type="button" onclick="_noProjRemove('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 2px" title="Remover">×</button>'
+   + '</div>'
+   + '<div class="modal-grid col2" style="gap:8px;margin-bottom:8px">'
+   + '<div class="mf" style="margin:0"><label style="font-size:10px">Nome do projeto</label>'
+   + '<input class="sp-inp" placeholder="Deixe em branco para usar o nome da obra" value="'+p.nome+'" oninput="_noProjLista['+idx+'].nome=this.value" style="font-size:12px"></div>'
+   + '<div class="mf" style="margin:0"><label style="font-size:10px">Tipo de orçamento</label>'
+   + '<select class="sp-inp" onchange="_noProjLista['+idx+'].tipo=this.value" style="font-size:12px"><option value="">Mesmo da obra</option>'+tipoOpts+'</select></div>'
+   + '</div>'
+   + '<div class="mf" style="margin:0"><label style="font-size:10px">Etapa do projeto</label>'
+   + '<select class="sp-inp" onchange="_noProjLista['+idx+'].etapa=this.value" style="font-size:12px">'+etapaOpts+'</select></div>'
+   + '</div>';
+ }).join('');
 }
 
 // Fechar com Escape
