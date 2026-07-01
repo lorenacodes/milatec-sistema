@@ -1781,6 +1781,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
  <!-- ── Sub-abas do Meu Painel ──────────────────────────────────── -->
  <div class="dash-tabbar">
   <button class="dash-tab-btn active" id="dash-tab-btn-geral" onclick="_dashTabSwitch('geral')">Visão Geral</button>
+  <button class="dash-tab-btn" id="dash-tab-btn-privadas" onclick="_dashTabSwitch('privadas')">🔒 Só para Mim</button>
   <button class="dash-tab-btn" id="dash-tab-btn-decisoes" onclick="_dashTabSwitch('decisoes')">Histórico de Decisões</button>
  </div>
 
@@ -2013,6 +2014,20 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
  </div><!-- /dash-scroll-wrap -->
 
  </div><!-- /dash-tab-geral -->
+
+ <!-- ── Sub-aba: Só para Mim (atividades privadas) ──────────────── -->
+ <div id="dash-tab-privadas" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+   <div>
+    <div style="font-size:13px;font-weight:700;color:var(--text)">Minhas atividades privadas</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px">Visíveis apenas para você — ninguém mais vê estas tarefas.</div>
+   </div>
+   <span id="dash-priv-count" style="font-size:11px;color:var(--muted)"></span>
+  </div>
+  <div id="dash-priv-list">
+   <div style="padding:30px;text-align:center;color:var(--muted);font-size:12px">Carregando...</div>
+  </div>
+ </div>
 
  <!-- ── Sub-aba: Histórico de Decisões ──────────────────────────── -->
  <div id="dash-tab-decisoes" style="display:none">
@@ -6990,6 +7005,23 @@ var _docCategoriaMapa = {
  'Proposta Comercial':'Comercial','Contrato':'Comercial','Nota Fiscal':'Comercial',
  'Projeto':'Técnico','ART':'Técnico','Pedido de Compra':'Técnico','Outro':'Técnico'
 };
+// Mapa de tipos snake_case do banco → nome de exibição
+var _docTipoNormMapa = {
+ 'proposta_comercial':'Proposta Comercial',
+ 'contrato':'Contrato','contrato_instalacao':'Contrato',
+ 'nota_fiscal':'Nota Fiscal',
+ 'projeto':'Projeto','projeto_executivo':'Projeto','calculo_estrutural':'Projeto',
+ 'art':'ART',
+ 'pedido_compra':'Pedido de Compra',
+ 'cnpj_cno':'Outro','enviado_cliente':'Outro','fotos_obra':'Outro',
+ 'boletim_medicao':'Outro','romaneio_entrega':'Outro','ordem_producao':'Outro',
+ 'documento_especifico':'Outro'
+};
+function _docNormTipo(tipo) {
+ if (!tipo) return 'Outro';
+ if (_docTiposOrdem.includes(tipo)) return tipo;
+ return _docTipoNormMapa[tipo] || 'Outro';
+}
 var _docTipoAtivo  = 'Proposta Comercial';
 var _docCatAtiva   = 'Todos';
 
@@ -7029,10 +7061,11 @@ async function _spCarregarDocumentos(obraId) {
    metadata: { produto: p.produto, numero: p.numero, valor_total: p.valor_total }
   });
  });
+ _docCatAtiva = 'Todos'; // reseta filtro ao trocar de obra
  var grupos = {};
  _docTiposOrdem.forEach(function(t){ grupos[t] = []; });
  docs.forEach(function(d){
-  var k = _docTiposOrdem.includes(d.tipo) ? d.tipo : 'Outro';
+  var k = _docNormTipo(d.tipo);
   grupos[k].push(d);
  });
  // Ordenar cada grupo: mais recentes primeiro
@@ -11294,13 +11327,71 @@ function _projDrawerRender() {
 
 /* ── SUB-ABAS DO MEU PAINEL ───────────────────────────────────────────────── */
 function _dashTabSwitch(tab) {
- var btns = { geral: document.getElementById('dash-tab-btn-geral'), decisoes: document.getElementById('dash-tab-btn-decisoes') };
- var panes = { geral: document.getElementById('dash-tab-geral'), decisoes: document.getElementById('dash-tab-decisoes') };
+ var btns  = { geral: document.getElementById('dash-tab-btn-geral'), privadas: document.getElementById('dash-tab-btn-privadas'), decisoes: document.getElementById('dash-tab-btn-decisoes') };
+ var panes = { geral: document.getElementById('dash-tab-geral'), privadas: document.getElementById('dash-tab-privadas'), decisoes: document.getElementById('dash-tab-decisoes') };
  Object.keys(btns).forEach(function(k) {
   if (btns[k]) btns[k].classList.toggle('active', k === tab);
   if (panes[k]) panes[k].style.display = (k === tab) ? '' : 'none';
  });
  if (tab === 'decisoes') _decisoesLoad();
+ if (tab === 'privadas') _dashRenderPrivadas();
+}
+
+async function _dashRenderPrivadas() {
+ var list = document.getElementById('dash-priv-list');
+ var cnt  = document.getElementById('dash-priv-count');
+ if (!list) return;
+ list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Carregando...</div>';
+ if (!_dbOk || !_currentUser) {
+  list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Usuário não identificado.</div>';
+  return;
+ }
+ var userEmail = _currentUser.email || '';
+ var userName  = _currentUser.nome  || '';
+ // Busca atividades privadas onde o usuário é responsável
+ var { data, error } = await _sb.from('atividades')
+  .select('*')
+  .eq('visibilidade', 'privada')
+  .neq('status', 'Concluída')
+  .or('responsavel.ilike.%' + userEmail + '%,responsavel.ilike.%' + userName + '%')
+  .order('data_prazo', { ascending: true, nullsFirst: false });
+ if (error) {
+  list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red);font-size:12px">Erro ao carregar.</div>';
+  return;
+ }
+ var ativs = data || [];
+ if (cnt) cnt.textContent = ativs.length + ' atividade' + (ativs.length !== 1 ? 's' : '');
+ if (!ativs.length) {
+  list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:12px">Você não tem atividades privadas abertas.</div>';
+  return;
+ }
+ var hoje = new Date(); hoje.setHours(0,0,0,0);
+ function prazoLabel(s) {
+  if (!s) return null;
+  var d = new Date(s + 'T00:00:00');
+  if (isNaN(d)) return null;
+  var dd = d.getDate() + '/' + (d.getMonth()+1) + '/' + String(d.getFullYear()).slice(2);
+  if (d < hoje) return { txt: 'ATRASADA · ' + dd, clr: '#ef4444', bg: 'rgba(239,68,68,.08)' };
+  if (d.toDateString() === hoje.toDateString()) return { txt: 'HOJE · ' + dd, clr: '#f59e0b', bg: 'rgba(245,158,11,.08)' };
+  return { txt: 'Prazo: ' + dd, clr: 'var(--muted)', bg: '' };
+ }
+ list.innerHTML = ativs.map(function(a) {
+  var pi = prazoLabel(a.data_prazo);
+  var stColors = { 'A fazer':'var(--muted)','Em progresso':'var(--navy)','Aguardando feedback':'var(--yellow)','Em andamento':'var(--navy)','Pendente':'var(--muted)' };
+  var sc = stColors[a.status] || 'var(--muted)';
+  return '<div onclick="_feedItemClick(this)" data-ativ=\'' + JSON.stringify(a).replace(/'/g,"&#39;") + '\''
+   + ' style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px;transition:background .12s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'
+   + '<span style="font-size:13px;flex-shrink:0;margin-top:2px">🔒</span>'
+   + '<div style="flex:1;min-width:0">'
+   + '<div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">' + (a.titulo || '(sem título)') + '</div>'
+   + '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">'
+   + (a.area ? '<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:var(--surface2);color:var(--muted)">' + a.area + '</span>' : '')
+   + '<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:var(--surface2);color:' + sc + ';font-weight:600">' + (a.status || '') + '</span>'
+   + (pi ? '<span style="font-size:10px;padding:1px 6px;border-radius:3px;' + (pi.bg ? 'background:'+pi.bg+';' : '') + 'color:' + pi.clr + ';font-weight:600">' + pi.txt + '</span>' : '')
+   + '</div>'
+   + '</div>'
+   + '</div>';
+ }).join('');
 }
 
 /* ── HISTÓRICO DE DECISÕES ────────────────────────────────────────────────── */
