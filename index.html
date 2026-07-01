@@ -1525,200 +1525,186 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 
 <!-- MODAL NOVA OBRA -->
 <div class="modal-backdrop" id="modal-nova-obra" onclick="handleModalBackdrop(event)">
- <div class="modal" id="modal-obra-box">
- <div class="modal-header">
- <div>
- <div class="modal-title">Nova Obra</div>
- <div class="modal-subtitle">Preencha as informações do projeto para cadastrar no sistema</div>
- </div>
- <button class="modal-close" onclick="closeNovaObra()">&#x2715;</button>
- </div>
+ <div class="modal" id="modal-obra-box" style="max-width:920px">
 
- <div class="modal-body">
-
- <!-- Identificação -->
- <div class="modal-section" style="margin-top:18px">Identificação do projeto</div>
- <div class="modal-grid">
- <div class="mf">
- <label>Nome da obra <span class="req">*</span></label>
- <input type="text" placeholder="Ex: Residencial Aurora — Bloco B" id="no-nome">
- </div>
- </div>
- <div class="modal-grid col2" style="margin-top:14px">
- <div class="mf">
- <label>Empresa / Construtora <span class="req">*</span></label>
- <select id="no-empresa" onchange="_noEmpresaChange(this.value)">
- <option value="">Selecione a empresa...</option>
- <option value="__nova__">+ Cadastrar nova empresa</option>
- </select>
- <!-- Inline: criar nova empresa -->
- <div id="no-nova-empresa-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
- <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Nova Empresa</div>
- <div class="modal-grid col2" style="gap:8px">
- <div class="mf" style="margin:0"><label style="font-size:10px">Nome *</label><input id="no-ne-nome" class="sp-inp" placeholder="Razão social"></div>
- <div class="mf" style="margin:0"><label style="font-size:10px">CNPJ</label><input id="no-ne-cnpj" class="sp-inp" placeholder="00.000.000/0001-00"></div>
- </div>
- <div class="modal-grid col2" style="gap:8px;margin-top:6px">
- <div class="mf" style="margin:0"><label style="font-size:10px">Estado</label><input id="no-ne-uf" class="sp-inp" placeholder="SE" maxlength="2" style="text-transform:uppercase"></div>
- <div class="mf" style="margin:0"><label style="font-size:10px">Cidade</label><input id="no-ne-cidade" class="sp-inp" placeholder="Aracaju"></div>
- </div>
- <div style="display:flex;gap:6px;margin-top:8px">
- <button type="button" onclick="_noSalvarNovaEmpresa()" style="font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:5px;background:var(--green);color:#fff;cursor:pointer">Salvar empresa</button>
- <button type="button" onclick="_noCancelarNovaEmpresa()" style="font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
- </div>
- </div>
- </div>
- <div class="mf">
- <label>Contato responsável</label>
- <select id="no-contato-id">
- <option value="">Selecione primeiro a empresa...</option>
- </select>
- <!-- Inline: criar novo contato -->
- <div id="no-novo-contato-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
- <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Novo Contato</div>
- <div class="modal-grid col2" style="gap:8px">
- <div class="mf" style="margin:0"><label style="font-size:10px">Nome *</label><input id="no-nc-nome" class="sp-inp" placeholder="Nome completo"></div>
- <div class="mf" style="margin:0"><label style="font-size:10px">Email</label><input id="no-nc-email" class="sp-inp" placeholder="email@empresa.com" type="email"></div>
- </div>
- <div class="mf" style="margin:0;margin-top:6px"><label style="font-size:10px">Cargo</label><input id="no-nc-cargo" class="sp-inp" placeholder="Ex: Engenheiro de Projetos"></div>
- <div style="display:flex;gap:6px;margin-top:8px">
- <button type="button" onclick="_noSalvarNovoContato()" style="font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:5px;background:var(--green);color:#fff;cursor:pointer">Salvar contato</button>
- <button type="button" onclick="_noCancelarNovoContato()" style="font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
- </div>
- </div>
- </div>
- </div>
-
- <div class="modal-divider"></div>
-
- <!-- Localização -->
- <div class="modal-section">Localização</div>
- <div class="modal-grid col3">
- <div class="mf">
- <label>Estado <span class="req">*</span></label>
- <select id="no-estado" onchange="loadCidades(this.value)">
- <option value="">Selecione o estado</option>
- <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
- <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
- <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
- <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
- <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
- <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
- <option>SP</option><option>SE</option><option>TO</option>
- </select>
- </div>
- <div class="mf span2">
- <label>Cidade <span class="req">*</span></label>
- <select id="no-cidade" disabled>
- <option value="">Selecione primeiro o estado</option>
- </select>
- <div id="no-cidade-loading" style="display:none;font-size:11px;color:var(--muted);margin-top:4px;display:none">
- <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite;vertical-align:middle"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
- Carregando municípios...
- </div>
- </div>
- </div>
-
- <div class="modal-divider"></div>
-
- <!-- Classificação -->
- <div class="modal-section">Classificação</div>
- <div class="modal-grid col2">
- <div class="mf">
- <label>Etapa do negócio <span class="req">*</span></label>
- <select id="no-etapa" onchange="_selColorize(this,_SEL_ETAPA_NEGOCIO_COR)">
- <option value="">Selecione...</option>
- <option>Análise inicial</option>
- <option>Pré-projeto</option>
- <option>Follow-up</option>
- <option>Em Andamento</option>
- <option>Projeto aprovado</option>
- <option>Concluído</option>
- </select>
- </div>
- <div class="mf">
- <label>Canal de vendas</label>
- <select id="no-canal">
- <option value="">Selecione...</option>
- <option>Inbound (indicação)</option>
- <option>Outbound (prospecção)</option>
- <option>Licitação pública</option>
- <option>Parceiro comercial</option>
- <option>Retorno de cliente</option>
- </select>
- </div>
- </div>
-
- <div style="margin-top:14px">
- <div class="mf">
- <label>Tipo de orçamento <span class="req">*</span></label>
- <div style="margin-top:2px">
- <div class="tipo-grid" id="no-tipo-grid">
- <button type="button" class="tipo-btn" data-tipo="Telhados" onclick="selectTipo(this)">Telhados LSF</button>
- <button type="button" class="tipo-btn" data-tipo="Modular" onclick="selectTipo(this)">Modular</button>
- <button type="button" class="tipo-btn" data-tipo="Steel Frame" onclick="selectTipo(this)">Steel Frame</button>
- <button type="button" class="tipo-btn" data-tipo="Solar" onclick="selectTipo(this)">Solar</button>
- </div>
- <div id="no-tipo-solar-hint" style="display:none;margin-top:6px;font-size:11px;color:var(--yellow)">
- Solar ativa geração de proposta comercial — preencha Qtd. e Valor unitário para habilitar o botão "Gerar Proposta Comercial".
- </div>
- </div>
- </div>
- </div>
-
- <div class="modal-divider"></div>
-
- <!-- Observações -->
- <div class="modal-grid">
- <div class="mf">
- <label>Observações internas</label>
- <textarea placeholder="Detalhes relevantes, requisitos específicos do cliente, referências técnicas..." id="no-obs"></textarea>
- </div>
- </div>
- <div style="margin-top:10px;padding:10px 12px;background:var(--navy-dim);border:1px solid var(--navy-dim);border-radius:7px;display:flex;align-items:flex-start;gap:8px">
- <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--navy)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="6.5"/><path d="M8 7v5M8 5v.5"/></svg>
- <div style="font-size:11px;color:var(--muted);line-height:1.5"><strong style="color:var(--text)">Valor e kits são definidos no orçamento.</strong> Após criar a obra, você gera o orçamento com os perfis metálicos — o sistema calcula automaticamente o peso (LSF) e o valor total com base no tipo de chapa e quantidade de kits.</div>
- </div>
-
- <div class="modal-divider"></div>
-
- <!-- Documentos do cliente -->
- <div class="modal-section">Documentos enviados pelo cliente</div>
- <div class="mf">
- <label>Arquivos recebidos <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(planta, memorial, referências)</span></label>
- <div class="file-drop" onclick="document.getElementById('no-file').click()" id="no-drop">
- <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);margin-bottom:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
- <div class="file-drop-text">Arraste arquivos aqui ou <strong>clique para selecionar</strong></div>
- <div class="file-drop-text" style="font-size:10px;margin-top:3px">PDF, DWG, PNG, DOCX — até 20 MB</div>
- </div>
- <div class="file-name" id="no-file-name"></div>
- <input type="file" id="no-file" multiple accept=".pdf,.dwg,.png,.jpg,.docx" onchange="handleNovaObraFile(event)">
- </div>
-
- </div>
-
- <!-- Projetos vinculados -->
- <div class="modal-divider"></div>
- <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 10px">
-  <div>
-   <div style="font-size:12px;font-weight:700;color:var(--text)">Projetos da obra</div>
-   <div style="font-size:11px;color:var(--muted);margin-top:1px">Opcional — adicione um ou mais projetos já vinculados a esta obra</div>
+  <!-- Header -->
+  <div class="modal-header" style="padding:24px 28px 0">
+   <div>
+    <div class="modal-title">Nova Obra</div>
+    <div class="modal-subtitle">Cadastre a obra e configure os projetos vinculados em um só lugar</div>
+   </div>
+   <button class="modal-close" onclick="closeNovaObra()">&#x2715;</button>
   </div>
-  <button type="button" onclick="_noProjAdd()" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 12px;border:1px solid var(--navy);border-radius:6px;background:transparent;color:var(--navy);cursor:pointer">
-   <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"/></svg> Adicionar projeto
-  </button>
- </div>
- <div id="no-projetos-lista" style="display:flex;flex-direction:column;gap:8px"></div>
 
- <div class="modal-footer" style="margin-top:16px">
- <div class="modal-footer-hint">Campos com <span>*</span> são obrigatórios</div>
- <div class="modal-actions">
- <button class="btn btn-ghost" onclick="closeNovaObra()">Cancelar</button>
- <button class="btn btn-primary" id="no-submit-btn" onclick="submitNovaObra()">Criar obra</button>
- </div>
- </div>
- </div>
-</div>
+  <div class="modal-body" style="padding:0 28px">
+
+   <!-- ── BLOCO 1: TIPO DE ORÇAMENTO ─────────────────────────── -->
+   <div style="margin-top:24px;padding:20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+    <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Tipo de orçamento <span style="color:var(--red)">*</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="no-tipo-grid">
+     <button type="button" class="tipo-btn" data-tipo="Telhados" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
+      <div style="font-size:18px;margin-bottom:4px">
+       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      Telhados LSF
+     </button>
+     <button type="button" class="tipo-btn" data-tipo="Modular" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
+      <div style="font-size:18px;margin-bottom:4px">
+       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+      </div>
+      Modular
+     </button>
+     <button type="button" class="tipo-btn" data-tipo="Steel Frame" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
+      <div style="font-size:18px;margin-bottom:4px">
+       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      Steel Frame
+     </button>
+     <button type="button" class="tipo-btn" data-tipo="Solar" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
+      <div style="font-size:18px;margin-bottom:4px">
+       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </div>
+      Solar
+     </button>
+    </div>
+    <!-- Aviso Solar -->
+    <div id="no-tipo-solar-hint" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:11px;color:var(--text);line-height:1.6;display:flex;align-items:flex-start;gap:8px">
+     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+     <span>Para gerar a proposta Solar automaticamente, adicione um projeto abaixo com produto <strong>Solo, Carport 2 Linhas, Carport 3 Linhas ou Laje</strong> — e preencha os campos de quantidade, valor unitário, frete e ICMS.</span>
+    </div>
+   </div>
+
+   <!-- ── BLOCO 2: IDENTIFICAÇÃO ──────────────────────────────── -->
+   <div class="modal-section" style="margin-top:24px">Identificação</div>
+   <div class="modal-grid" style="margin-bottom:14px">
+    <div class="mf">
+     <label>Nome da obra <span class="req">*</span></label>
+     <input type="text" placeholder="Ex: Residencial Aurora — Bloco B" id="no-nome" style="font-size:14px">
+    </div>
+   </div>
+   <div class="modal-grid col2">
+    <div class="mf">
+     <label>Empresa / Construtora <span class="req">*</span></label>
+     <select id="no-empresa" onchange="_noEmpresaChange(this.value)">
+      <option value="">Selecione ou cadastre uma empresa...</option>
+      <option value="__nova__">+ Cadastrar nova empresa</option>
+     </select>
+     <div id="no-nova-empresa-box" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text)">Nova empresa</div>
+      <div style="padding:14px">
+       <div class="modal-grid col2" style="gap:10px;margin-bottom:10px">
+        <div class="mf" style="margin:0"><label style="font-size:11px">Razão social <span class="req">*</span></label><input id="no-ne-nome" class="sp-inp" placeholder="Nome da empresa"></div>
+        <div class="mf" style="margin:0"><label style="font-size:11px">CNPJ</label><input id="no-ne-cnpj" class="sp-inp" placeholder="00.000.000/0001-00"></div>
+        <div class="mf" style="margin:0"><label style="font-size:11px">Estado</label><input id="no-ne-uf" class="sp-inp" placeholder="SE" maxlength="2" style="text-transform:uppercase"></div>
+        <div class="mf" style="margin:0"><label style="font-size:11px">Cidade</label><input id="no-ne-cidade" class="sp-inp" placeholder="Aracaju"></div>
+       </div>
+       <div style="display:flex;gap:8px">
+        <button type="button" onclick="_noSalvarNovaEmpresa()" style="font-size:12px;font-weight:600;padding:7px 16px;border:none;border-radius:7px;background:var(--green);color:#fff;cursor:pointer">Salvar empresa</button>
+        <button type="button" onclick="_noCancelarNovaEmpresa()" style="font-size:12px;padding:7px 16px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="mf">
+     <label>Contato responsável</label>
+     <select id="no-contato-id">
+      <option value="">Selecione a empresa primeiro...</option>
+     </select>
+     <div id="no-novo-contato-box" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text)">Novo contato</div>
+      <div style="padding:14px">
+       <div class="modal-grid col2" style="gap:10px;margin-bottom:10px">
+        <div class="mf" style="margin:0"><label style="font-size:11px">Nome <span class="req">*</span></label><input id="no-nc-nome" class="sp-inp" placeholder="Nome completo"></div>
+        <div class="mf" style="margin:0"><label style="font-size:11px">Email</label><input id="no-nc-email" class="sp-inp" placeholder="email@empresa.com" type="email"></div>
+       </div>
+       <div class="mf" style="margin:0 0 10px"><label style="font-size:11px">Cargo</label><input id="no-nc-cargo" class="sp-inp" placeholder="Ex: Engenheiro de Projetos"></div>
+       <div style="display:flex;gap:8px">
+        <button type="button" onclick="_noSalvarNovoContato()" style="font-size:12px;font-weight:600;padding:7px 16px;border:none;border-radius:7px;background:var(--green);color:#fff;cursor:pointer">Salvar contato</button>
+        <button type="button" onclick="_noCancelarNovoContato()" style="font-size:12px;padding:7px 16px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <!-- ── BLOCO 3: LOCALIZAÇÃO ────────────────────────────────── -->
+   <div class="modal-section" style="margin-top:24px">Localização</div>
+   <div class="modal-grid col3">
+    <div class="mf">
+     <label>Estado <span class="req">*</span></label>
+     <select id="no-estado" onchange="loadCidades(this.value)">
+      <option value="">UF</option>
+      <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+      <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+      <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+      <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+      <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+      <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+      <option>SP</option><option>SE</option><option>TO</option>
+     </select>
+    </div>
+    <div class="mf span2">
+     <label>Cidade <span class="req">*</span></label>
+     <select id="no-cidade" disabled><option value="">Selecione o estado primeiro</option></select>
+     <div id="no-cidade-loading" style="display:none;font-size:11px;color:var(--muted);margin-top:4px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite;vertical-align:middle"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Carregando municípios...
+     </div>
+    </div>
+   </div>
+
+   <!-- ── BLOCO 4: NEGÓCIO ────────────────────────────────────── -->
+   <div class="modal-section" style="margin-top:24px">Negócio</div>
+   <div class="modal-grid col2" style="margin-bottom:14px">
+    <div class="mf">
+     <label>Etapa do negócio <span class="req">*</span></label>
+     <select id="no-etapa" onchange="_selColorize(this,_SEL_ETAPA_NEGOCIO_COR)">
+      <option value="">Selecione...</option>
+      <option>Análise inicial</option><option>Pré-projeto</option><option>Follow-up</option>
+      <option>Em Andamento</option><option>Projeto aprovado</option><option>Concluído</option>
+     </select>
+    </div>
+    <div class="mf">
+     <label>Canal de vendas</label>
+     <select id="no-canal">
+      <option value="">Selecione...</option>
+      <option>Inbound (indicação)</option><option>Outbound (prospecção)</option>
+      <option>Licitação pública</option><option>Parceiro comercial</option>
+      <option>Retorno de cliente</option>
+     </select>
+    </div>
+   </div>
+   <div class="mf">
+    <label>Observações internas</label>
+    <textarea placeholder="Detalhes relevantes, requisitos específicos do cliente..." id="no-obs" style="height:60px;resize:vertical"></textarea>
+   </div>
+
+  </div><!-- /modal-body -->
+
+  <!-- ── BLOCO 5: PROJETOS ──────────────────────────────────────── -->
+  <div style="margin:20px 0 0;border-top:1px solid var(--border);padding:20px 28px 0">
+   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+     <div style="font-size:13px;font-weight:700;color:var(--text)">Projetos da obra</div>
+     <div style="font-size:11px;color:var(--muted);margin-top:3px">Configure os projetos vinculados — para Solar, preencha produto e valores para gerar proposta automática</div>
+    </div>
+    <button type="button" onclick="_noProjAdd()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 16px;border:1px solid var(--navy);border-radius:7px;background:transparent;color:var(--navy);cursor:pointer;white-space:nowrap;flex-shrink:0">
+     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"/></svg> Adicionar projeto
+    </button>
+   </div>
+   <div id="no-projetos-lista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="modal-footer" style="padding:18px 28px;margin-top:20px">
+   <div class="modal-footer-hint">Campos com <span>*</span> são obrigatórios</div>
+   <div class="modal-actions">
+    <button class="btn btn-ghost" onclick="closeNovaObra()">Cancelar</button>
+    <button class="btn btn-primary" id="no-submit-btn" onclick="submitNovaObra()" style="min-width:120px">Criar obra</button>
+   </div>
+  </div>
+
+ </div><!-- /modal-obra-box -->
+</div><!-- /modal-nova-obra -->
 
 <!-- MAIN -->
 <main class="main">
@@ -8286,18 +8272,16 @@ function handleModalBackdrop(e) {
 
 function selectTipo(btn) {
  _selectedTipo = btn.dataset.tipo;
- document.querySelectorAll('.tipo-btn').forEach(b => {
- b.className = 'tipo-btn';
+ document.querySelectorAll('.tipo-btn').forEach(function(b) {
+  b.className = 'tipo-btn';
+  b.style.padding = '12px 8px';
  });
- const map = {
- 'Telhados': 'sel-telhados',
- 'Modular': 'sel-modular',
- 'Steel Frame': 'sel-steel',
- 'Solar': 'sel-solar'
- };
+ var map = { 'Telhados':'sel-telhados','Modular':'sel-modular','Steel Frame':'sel-steel','Solar':'sel-solar' };
  btn.classList.add(map[_selectedTipo] || '');
- document.getElementById('no-tipo-solar-hint').style.display =
- _selectedTipo === 'Solar' ? 'block' : 'none';
+ var hint = document.getElementById('no-tipo-solar-hint');
+ if (hint) hint.style.display = _selectedTipo === 'Solar' ? 'flex' : 'none';
+ // Re-renderiza projetos para mostrar/esconder campos Solar
+ if (_noProjLista && _noProjLista.length) _noProjRender();
 }
 
 function handleNovaObraFile(e) {
@@ -8360,20 +8344,62 @@ async function submitNovaObra() {
   }
 
   // 4. Criar projetos vinculados
+  var propostasParaGerar = [];
   if (_noProjLista.length) {
    for (var pi = 0; pi < _noProjLista.length; pi++) {
     var pItem = _noProjLista[pi];
-    await _sb.from('projetos').insert({
+    var projPayload = {
      nome: (pItem.nome || '').trim() || nome,
      obra_id: obraId,
      empresa_id: empresaId || null,
-     tipo_orcamento: pItem.tipo || tipo,
+     tipo_orcamento: tipo,
      etapa_projeto: pItem.etapa || 'Proposta Enviada',
-    });
+    };
+    if (pItem.produto) projPayload.produto = [pItem.produto];
+    if (pItem.qtd)  projPayload.quantidade    = parseFloat(pItem.qtd)  || null;
+    if (pItem.vuni) projPayload.valor_unitario = parseFloat(pItem.vuni) || null;
+    if (pItem.frete) projPayload.frete          = pItem.frete;
+    if (pItem.icms)  projPayload.aliquota_icms  = pItem.icms;
+    var projRes = await _sb.from('projetos').insert(projPayload).select('id').single();
+    if (projRes.data && pItem.gerarProposta && _NO_SOLAR_PROD_AUTO.includes(pItem.produto)) {
+     propostasParaGerar.push({ projId: projRes.data.id, pItem: pItem });
+    }
    }
   }
 
-  _showToast('Obra criada com sucesso!', 'ok');
+  // 5. Gerar propostas Solar automaticamente
+  for (var gi = 0; gi < propostasParaGerar.length; gi++) {
+   var pg = propostasParaGerar[gi];
+   var qtd  = parseFloat(pg.pItem.qtd)  || 0;
+   var vuni = parseFloat(pg.pItem.vuni) || 0;
+   if (!qtd || !vuni || !pg.pItem.frete || !pg.pItem.icms) continue;
+   var numero = await gerarNumeroProposta();
+   var now = new Date();
+   var dataFmt = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+   var vt = qtd * vuni;
+   var geradoPor = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || null;
+   await _sb.from('propostas').insert({
+    numero: numero,
+    obra_id: obraId,
+    projeto_id: pg.projId,
+    empresa_id: empresaId || null,
+    produto: pg.pItem.produto,
+    quantidade: qtd,
+    valor_unitario: vuni,
+    valor_total: vt,
+    frete: pg.pItem.frete,
+    icms: pg.pItem.icms,
+    status: 'Gerada',
+    versao: 1,
+    gerado_por: geradoPor,
+    data_geracao: dataFmt,
+    tipo_proposta: 'Solar',
+   });
+  }
+
+  var msgToast = 'Obra criada com sucesso!';
+  if (propostasParaGerar.length) msgToast += ' ' + propostasParaGerar.length + ' proposta(s) Solar gerada(s).';
+  _showToast(msgToast, 'ok');
   closeNovaObra();
   await _dbLoadObras();
   if (typeof _dbLoadObrasKanban === 'function') _dbLoadObrasKanban();
@@ -8386,11 +8412,23 @@ async function submitNovaObra() {
 }
 
 /* ── Projetos dinâmicos no formulário de Nova Obra ─────────────────────────── */
-var _noProjLista = []; // [{nome, tipo, etapa}]
+var _noProjLista = []; // [{nome, produto, qtd, vuni, frete, icms, etapa, gerarProposta}]
+var _NO_SOLAR_PROD_AUTO = ['Solo','Carport 2 Linhas','Carport 3 Linhas','Laje'];
 
 function _noProjAdd() {
- _noProjLista.push({ nome: '', tipo: '', etapa: 'Proposta Enviada' });
+ var isSolar = _selectedTipo === 'Solar';
+ _noProjLista.push({
+  nome: '', etapa: 'Proposta Enviada',
+  produto: isSolar ? 'Solo' : '',
+  qtd: '', vuni: '', frete: 'CIF', icms: '12',
+  gerarProposta: isSolar
+ });
  _noProjRender();
+ // Scroll para o novo card
+ setTimeout(function(){
+  var lista = document.getElementById('no-projetos-lista');
+  if (lista) { var last = lista.lastElementChild; if (last) last.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+ }, 60);
 }
 
 function _noProjRemove(idx) {
@@ -8398,29 +8436,80 @@ function _noProjRemove(idx) {
  _noProjRender();
 }
 
+function _noProjProdChange(idx, val) {
+ _noProjLista[idx].produto = val;
+ // Re-renderiza só os campos condicionais dentro do card
+ var solarBox = document.getElementById('no-proj-solar-box-' + idx);
+ var autoBox  = document.getElementById('no-proj-auto-box-' + idx);
+ var podeAuto = _NO_SOLAR_PROD_AUTO.includes(val);
+ if (solarBox) solarBox.style.display = podeAuto ? '' : 'none';
+ if (autoBox)  autoBox.style.display  = podeAuto ? '' : 'none';
+ if (!podeAuto) _noProjLista[idx].gerarProposta = false;
+}
+
 function _noProjRender() {
  var container = document.getElementById('no-projetos-lista');
  if (!container) return;
+ var isSolar = _selectedTipo === 'Solar';
+
  if (!_noProjLista.length) {
-  container.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:8px 0">Nenhum projeto adicionado. Você pode criar projetos depois, na página da obra.</div>';
+  container.innerHTML = '<div style="padding:16px;border:1px dashed var(--border);border-radius:8px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6">Nenhum projeto adicionado ainda.<br>Você pode adicionar projetos aqui ou depois, dentro da obra.</div>';
   return;
  }
- var tipoOpts = ['Telhados','Modular','Steel Frame','Solar'].map(function(t){ return '<option>'+t+'</option>'; }).join('');
- var etapaOpts = ['Proposta Enviada','Anteprojeto','Projeto Executivo','Em Produção','Concluído'].map(function(e){ return '<option>'+e+'</option>'; }).join('');
+
+ var etapaOpts = ['Proposta Enviada','Anteprojeto','Projeto Executivo','Em Produção','Concluído'];
+ var prodSolarOpts = ['Solo','Carport 2 Linhas','Carport 3 Linhas','Laje','Peças Avulsas'];
+
  container.innerHTML = _noProjLista.map(function(p, idx) {
-  return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;position:relative">'
-   + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-   + '<span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Projeto ' + (idx+1) + '</span>'
-   + '<button type="button" onclick="_noProjRemove('+idx+')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 2px" title="Remover">×</button>'
+  var podeAuto = isSolar && _NO_SOLAR_PROD_AUTO.includes(p.produto);
+  var prodSelect = isSolar
+   ? ('<select class="sp-inp" style="font-size:12px" onchange="_noProjProdChange(' + idx + ',this.value)">'
+      + prodSolarOpts.map(function(o){ return '<option' + (o===p.produto?' selected':'') + '>' + o + '</option>'; }).join('')
+      + '</select>')
+   : ('<input class="sp-inp" style="font-size:12px" placeholder="Ex: Painéis, Perfis, Módulos..." value="' + (p.produto||'') + '" oninput="_noProjLista['+idx+'].produto=this.value">');
+
+  return '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)">'
+   // Card header
+   + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">'
+   + '<div style="display:flex;align-items:center;gap:8px">'
+   + '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:700">' + (idx+1) + '</span>'
+   + '<span style="font-size:12px;font-weight:600;color:var(--text)">Projeto ' + (idx+1) + '</span>'
+   + (isSolar && podeAuto ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(245,158,11,.12);color:var(--yellow);font-weight:600;border:1px solid rgba(245,158,11,.3)">Solar</span>' : '')
    + '</div>'
-   + '<div class="modal-grid col2" style="gap:8px;margin-bottom:8px">'
-   + '<div class="mf" style="margin:0"><label style="font-size:10px">Nome do projeto</label>'
-   + '<input class="sp-inp" placeholder="Deixe em branco para usar o nome da obra" value="'+p.nome+'" oninput="_noProjLista['+idx+'].nome=this.value" style="font-size:12px"></div>'
-   + '<div class="mf" style="margin:0"><label style="font-size:10px">Tipo de orçamento</label>'
-   + '<select class="sp-inp" onchange="_noProjLista['+idx+'].tipo=this.value" style="font-size:12px"><option value="">Mesmo da obra</option>'+tipoOpts+'</select></div>'
+   + '<button type="button" onclick="_noProjRemove(' + idx + ')" style="background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:4px;font-size:11px;padding:4px 6px;border-radius:5px" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'var(--muted)\'"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3l10 10M13 3L3 13"/></svg> Remover</button>'
    + '</div>'
-   + '<div class="mf" style="margin:0"><label style="font-size:10px">Etapa do projeto</label>'
-   + '<select class="sp-inp" onchange="_noProjLista['+idx+'].etapa=this.value" style="font-size:12px">'+etapaOpts+'</select></div>'
+   // Card body
+   + '<div style="padding:16px;display:flex;flex-direction:column;gap:14px">'
+   // Linha 1: nome + etapa
+   + '<div class="modal-grid col2" style="gap:12px">'
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">Nome do projeto</label>'
+   + '<input class="sp-inp" style="font-size:12px" placeholder="Deixe em branco para usar o nome da obra" value="' + (p.nome||'') + '" oninput="_noProjLista['+idx+'].nome=this.value"></div>'
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">Etapa do projeto</label>'
+   + '<select class="sp-inp" style="font-size:12px" onchange="_noProjLista['+idx+'].etapa=this.value">'
+   + etapaOpts.map(function(e){ return '<option' + (e===p.etapa?' selected':'') + '>' + e + '</option>'; }).join('')
+   + '</select></div>'
+   + '</div>'
+   // Linha 2: produto
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">Produto' + (isSolar ? ' <span style="color:var(--red)">*</span>' : '') + '</label>' + prodSelect + '</div>'
+   // Campos Solar (qtd, vuni, frete, icms)
+   + '<div id="no-proj-solar-box-' + idx + '" style="display:' + (podeAuto ? '' : 'none') + ';background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:14px">'
+   + '<div style="font-size:10px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Dados para proposta comercial</div>'
+   + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">'
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">Quantidade <span style="color:var(--red)">*</span></label><input class="sp-inp" style="font-size:12px" type="number" min="0" step="0.01" placeholder="0" value="' + (p.qtd||'') + '" oninput="_noProjLista['+idx+'].qtd=this.value"></div>'
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">Valor unit. (R$) <span style="color:var(--red)">*</span></label><input class="sp-inp" style="font-size:12px" type="number" min="0" step="0.01" placeholder="0,00" value="' + (p.vuni||'') + '" oninput="_noProjLista['+idx+'].vuni=this.value"></div>'
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">Frete <span style="color:var(--red)">*</span></label><select class="sp-inp" style="font-size:12px" onchange="_noProjLista['+idx+'].frete=this.value"><option value="">Selecione</option><option' + (p.frete==='CIF'?' selected':'') + '>CIF</option><option' + (p.frete==='FOB'?' selected':'') + '>FOB</option></select></div>'
+   + '<div class="mf" style="margin:0"><label style="font-size:11px">ICMS (%) <span style="color:var(--red)">*</span></label><select class="sp-inp" style="font-size:12px" onchange="_noProjLista['+idx+'].icms=this.value"><option value="">Selecione</option><option value="12"' + (p.icms==='12'?' selected':'') + '>12%</option><option value="19"' + (p.icms==='19'?' selected':'') + '>19%</option></select></div>'
+   + '</div>'
+   + '</div>'
+   // Auto-proposta toggle
+   + '<div id="no-proj-auto-box-' + idx + '" style="display:' + (podeAuto ? '' : 'none') + '">'
+   + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:var(--surface2)">'
+   + '<input type="checkbox" ' + (p.gerarProposta ? 'checked' : '') + ' onchange="_noProjLista['+idx+'].gerarProposta=this.checked" style="width:15px;height:15px;flex-shrink:0;cursor:pointer">'
+   + '<div><div style="font-size:12px;font-weight:600;color:var(--text)">Gerar proposta comercial Solar automaticamente</div>'
+   + '<div style="font-size:11px;color:var(--muted);margin-top:1px">A proposta será criada e registrada assim que a obra for salva</div></div>'
+   + '</label>'
+   + '</div>'
+   + '</div>'// /card body
    + '</div>';
  }).join('');
 }
