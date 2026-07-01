@@ -310,6 +310,12 @@
  .tipo-btn.sel-modular{background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
  .tipo-btn.sel-steel{background:rgba(137,87,229,.12);border-color:var(--purple);color:var(--purple)}
  .tipo-btn.sel-solar{background:var(--yellow-dim);border-color:var(--yellow);color:var(--yellow)}
+ #no-tipo-grid .tipo-btn{border-radius:12px;border-width:2px;background:var(--surface);transition:all .18s}
+ #no-tipo-grid .tipo-btn:hover{border-color:var(--navy);color:var(--navy);background:rgba(15,36,66,.04);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+ #no-tipo-grid .tipo-btn.sel-telhados{background:var(--green-dim);border-color:var(--green);color:var(--green);box-shadow:0 4px 14px rgba(22,163,74,.15)}
+ #no-tipo-grid .tipo-btn.sel-modular{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);box-shadow:0 4px 14px rgba(37,99,235,.15)}
+ #no-tipo-grid .tipo-btn.sel-steel{background:rgba(137,87,229,.1);border-color:var(--purple);color:var(--purple);box-shadow:0 4px 14px rgba(137,87,229,.15)}
+ #no-tipo-grid .tipo-btn.sel-solar{background:var(--yellow-dim);border-color:var(--yellow);color:#b45309;box-shadow:0 4px 14px rgba(245,158,11,.18)}
  .modal-footer{padding:18px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;margin-top:20px}
  .modal-footer-hint{font-size:11px;color:var(--muted)}
  .modal-footer-hint span{color:var(--red)}
@@ -1523,80 +1529,111 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
  </div>
 </div>
 
-<!-- MODAL NOVA OBRA -->
+<!-- MODAL NOVA OBRA — wizard 4 etapas -->
 <div class="modal-backdrop" id="modal-nova-obra" onclick="handleModalBackdrop(event)">
- <div class="modal" id="modal-obra-box" style="max-width:920px">
+ <div class="modal" id="modal-obra-box" style="max-width:860px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh">
 
-  <!-- Header -->
-  <div class="modal-header" style="padding:24px 28px 0">
-   <div>
-    <div class="modal-title">Nova Obra</div>
-    <div class="modal-subtitle">Cadastre a obra e configure os projetos vinculados em um só lugar</div>
+  <!-- ── Topo fixo: título + barra de progresso ─────────────────── -->
+  <div style="flex-shrink:0;padding:24px 28px 0;border-bottom:1px solid var(--border)">
+   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+    <div>
+     <div style="font-size:18px;font-weight:700;letter-spacing:-.3px;color:var(--text)">Nova Obra</div>
+     <div id="no-step-subtitle" style="font-size:12px;color:var(--muted);margin-top:3px">Passo 1 de 4</div>
+    </div>
+    <button class="modal-close" onclick="closeNovaObra()">&#x2715;</button>
    </div>
-   <button class="modal-close" onclick="closeNovaObra()">&#x2715;</button>
+   <!-- Barra de progresso por etapas -->
+   <div style="display:flex;align-items:center;padding-bottom:20px;gap:0" id="no-wizard-bar">
+    <!-- Passo 1 -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="_noWizardGo(1)" id="no-wbar-1">
+     <div id="no-wcircle-1" style="width:28px;height:28px;border-radius:50%;background:var(--navy);border:2px solid var(--navy);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;transition:all .2s">1</div>
+     <span style="font-size:10px;font-weight:600;color:var(--navy);white-space:nowrap">Tipo</span>
+    </div>
+    <div id="no-wline-1" style="flex:1;height:2px;background:var(--border);margin:0 6px;margin-bottom:16px;transition:background .3s"></div>
+    <!-- Passo 2 -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="_noWizardGo(2)" id="no-wbar-2">
+     <div id="no-wcircle-2" style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);transition:all .2s">2</div>
+     <span style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap">Identificação</span>
+    </div>
+    <div id="no-wline-2" style="flex:1;height:2px;background:var(--border);margin:0 6px;margin-bottom:16px;transition:background .3s"></div>
+    <!-- Passo 3 -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="_noWizardGo(3)" id="no-wbar-3">
+     <div id="no-wcircle-3" style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);transition:all .2s">3</div>
+     <span style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap">Local & Negócio</span>
+    </div>
+    <div id="no-wline-3" style="flex:1;height:2px;background:var(--border);margin:0 6px;margin-bottom:16px;transition:background .3s"></div>
+    <!-- Passo 4 -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="_noWizardGo(4)" id="no-wbar-4">
+     <div id="no-wcircle-4" style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);transition:all .2s">4</div>
+     <span style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap">Projetos</span>
+    </div>
+   </div>
   </div>
 
-  <div class="modal-body" style="padding:0 28px">
+  <!-- ── Área de conteúdo scrollável ────────────────────────────── -->
+  <div style="flex:1;overflow-y:auto;min-height:0">
 
-   <!-- ── BLOCO 1: TIPO DE ORÇAMENTO ─────────────────────────── -->
-   <div style="margin-top:24px;padding:20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
-    <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Tipo de orçamento <span style="color:var(--red)">*</span></div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="no-tipo-grid">
-     <button type="button" class="tipo-btn" data-tipo="Telhados" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
-      <div style="font-size:18px;margin-bottom:4px">
-       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </div>
-      Telhados LSF
-     </button>
-     <button type="button" class="tipo-btn" data-tipo="Modular" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
-      <div style="font-size:18px;margin-bottom:4px">
-       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-      </div>
-      Modular
-     </button>
-     <button type="button" class="tipo-btn" data-tipo="Steel Frame" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
-      <div style="font-size:18px;margin-bottom:4px">
-       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      </div>
-      Steel Frame
-     </button>
-     <button type="button" class="tipo-btn" data-tipo="Solar" onclick="selectTipo(this)" style="padding:12px 8px;font-size:12px;border-radius:8px">
-      <div style="font-size:18px;margin-bottom:4px">
-       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-      </div>
-      Solar
-     </button>
-    </div>
-    <!-- Aviso Solar -->
-    <div id="no-tipo-solar-hint" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:11px;color:var(--text);line-height:1.6;display:flex;align-items:flex-start;gap:8px">
-     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-     <span>Para gerar a proposta Solar automaticamente, adicione um projeto abaixo com produto <strong>Solo, Carport 2 Linhas, Carport 3 Linhas ou Laje</strong> — e preencha os campos de quantidade, valor unitário, frete e ICMS.</span>
-    </div>
+  <!-- ═══════════════════════════════════ PASSO 1: TIPO ══════ -->
+  <div id="no-step-1" style="padding:32px 28px">
+   <div style="text-align:center;margin-bottom:28px">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Qual o tipo de orçamento?</div>
+    <div style="font-size:12px;color:var(--muted)">Selecione uma opção para continuar</div>
    </div>
+   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:640px;margin:0 auto" id="no-tipo-grid">
+    <button type="button" class="tipo-btn" data-tipo="Telhados" onclick="selectTipo(this)" style="padding:24px 12px 20px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:10px">
+     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+     <span style="font-size:12px;font-weight:600">Telhados LSF</span>
+    </button>
+    <button type="button" class="tipo-btn" data-tipo="Modular" onclick="selectTipo(this)" style="padding:24px 12px 20px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:10px">
+     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+     <span style="font-size:12px;font-weight:600">Modular</span>
+    </button>
+    <button type="button" class="tipo-btn" data-tipo="Steel Frame" onclick="selectTipo(this)" style="padding:24px 12px 20px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:10px">
+     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+     <span style="font-size:12px;font-weight:600">Steel Frame</span>
+    </button>
+    <button type="button" class="tipo-btn" data-tipo="Solar" onclick="selectTipo(this)" style="padding:24px 12px 20px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:10px">
+     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+     <span style="font-size:12px;font-weight:600">Solar</span>
+    </button>
+   </div>
+   <div id="no-tipo-solar-hint" style="display:none;max-width:640px;margin:20px auto 0;padding:12px 16px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:10px;font-size:11px;color:var(--text);line-height:1.6;display:flex;align-items:flex-start;gap:10px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    <span>Para <strong>proposta automática Solar</strong>, adicione um projeto no passo 4 com produto <strong>Solo, Carport 2L, Carport 3L ou Laje</strong> e preencha os dados comerciais.</span>
+   </div>
+  </div>
 
-   <!-- ── BLOCO 2: IDENTIFICAÇÃO ──────────────────────────────── -->
-   <div class="modal-section" style="margin-top:24px">Identificação</div>
-   <div class="modal-grid" style="margin-bottom:14px">
-    <div class="mf">
-     <label>Nome da obra <span class="req">*</span></label>
-     <input type="text" placeholder="Ex: Residencial Aurora — Bloco B" id="no-nome" style="font-size:14px">
-    </div>
+  <!-- ═══════════════════════════ PASSO 2: IDENTIFICAÇÃO ══════ -->
+  <div id="no-step-2" style="display:none;padding:32px 28px">
+   <div style="margin-bottom:24px">
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Identificação da obra</div>
+    <div style="font-size:12px;color:var(--muted)">Nome, empresa responsável e contato principal</div>
    </div>
-   <div class="modal-grid col2">
-    <div class="mf">
-     <label>Empresa / Construtora <span class="req">*</span></label>
-     <select id="no-empresa" onchange="_noEmpresaChange(this.value)">
-      <option value="">Selecione ou cadastre uma empresa...</option>
+   <!-- Nome -->
+   <div class="mf" style="margin-bottom:20px">
+    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Nome da obra <span class="req">*</span></label>
+    <input type="text" id="no-nome" placeholder="Ex: Residencial Aurora — Bloco B" style="font-size:14px;padding:11px 14px;margin-top:6px">
+   </div>
+   <!-- Empresa + Contato -->
+   <div class="modal-grid col2" style="gap:20px;align-items:start">
+    <div>
+     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Empresa / Construtora <span class="req">*</span></label>
+     <select id="no-empresa" onchange="_noEmpresaChange(this.value)" style="margin-top:6px">
+      <option value="">Selecione uma empresa...</option>
       <option value="__nova__">+ Cadastrar nova empresa</option>
      </select>
-     <div id="no-nova-empresa-box" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-      <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text)">Nova empresa</div>
-      <div style="padding:14px">
-       <div class="modal-grid col2" style="gap:10px;margin-bottom:10px">
-        <div class="mf" style="margin:0"><label style="font-size:11px">Razão social <span class="req">*</span></label><input id="no-ne-nome" class="sp-inp" placeholder="Nome da empresa"></div>
-        <div class="mf" style="margin:0"><label style="font-size:11px">CNPJ</label><input id="no-ne-cnpj" class="sp-inp" placeholder="00.000.000/0001-00"></div>
-        <div class="mf" style="margin:0"><label style="font-size:11px">Estado</label><input id="no-ne-uf" class="sp-inp" placeholder="SE" maxlength="2" style="text-transform:uppercase"></div>
-        <div class="mf" style="margin:0"><label style="font-size:11px">Cidade</label><input id="no-ne-cidade" class="sp-inp" placeholder="Aracaju"></div>
+     <!-- Inline nova empresa -->
+     <div id="no-nova-empresa-box" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">
+       <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M7 3V2M9 3V2M5 8h6M5 11h4"/></svg>
+       Nova empresa
+      </div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+       <div class="modal-grid col2" style="gap:10px">
+        <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">Razão social <span class="req">*</span></label><input id="no-ne-nome" class="sp-inp" placeholder="Nome da empresa" style="margin-top:4px"></div>
+        <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">CNPJ</label><input id="no-ne-cnpj" class="sp-inp" placeholder="00.000.000/0001-00" style="margin-top:4px"></div>
+        <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">UF</label><input id="no-ne-uf" class="sp-inp" placeholder="SE" maxlength="2" style="text-transform:uppercase;margin-top:4px"></div>
+        <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">Cidade</label><input id="no-ne-cidade" class="sp-inp" placeholder="Aracaju" style="margin-top:4px"></div>
        </div>
        <div style="display:flex;gap:8px">
         <button type="button" onclick="_noSalvarNovaEmpresa()" style="font-size:12px;font-weight:600;padding:7px 16px;border:none;border-radius:7px;background:var(--green);color:#fff;cursor:pointer">Salvar empresa</button>
@@ -1605,19 +1642,23 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
       </div>
      </div>
     </div>
-    <div class="mf">
-     <label>Contato responsável</label>
-     <select id="no-contato-id">
+    <div>
+     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Contato responsável</label>
+     <select id="no-contato-id" style="margin-top:6px">
       <option value="">Selecione a empresa primeiro...</option>
      </select>
-     <div id="no-novo-contato-box" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-      <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text)">Novo contato</div>
-      <div style="padding:14px">
-       <div class="modal-grid col2" style="gap:10px;margin-bottom:10px">
-        <div class="mf" style="margin:0"><label style="font-size:11px">Nome <span class="req">*</span></label><input id="no-nc-nome" class="sp-inp" placeholder="Nome completo"></div>
-        <div class="mf" style="margin:0"><label style="font-size:11px">Email</label><input id="no-nc-email" class="sp-inp" placeholder="email@empresa.com" type="email"></div>
+     <!-- Inline novo contato -->
+     <div id="no-novo-contato-box" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">
+       <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6"/></svg>
+       Novo contato
+      </div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+       <div class="modal-grid col2" style="gap:10px">
+        <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">Nome <span class="req">*</span></label><input id="no-nc-nome" class="sp-inp" placeholder="Nome completo" style="margin-top:4px"></div>
+        <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">Email</label><input id="no-nc-email" class="sp-inp" placeholder="email@empresa.com" type="email" style="margin-top:4px"></div>
        </div>
-       <div class="mf" style="margin:0 0 10px"><label style="font-size:11px">Cargo</label><input id="no-nc-cargo" class="sp-inp" placeholder="Ex: Engenheiro de Projetos"></div>
+       <div class="mf" style="margin:0"><label style="font-size:10px;font-weight:600;color:var(--muted)">Cargo</label><input id="no-nc-cargo" class="sp-inp" placeholder="Ex: Engenheiro de Projetos" style="margin-top:4px"></div>
        <div style="display:flex;gap:8px">
         <button type="button" onclick="_noSalvarNovoContato()" style="font-size:12px;font-weight:600;padding:7px 16px;border:none;border-radius:7px;background:var(--green);color:#fff;cursor:pointer">Salvar contato</button>
         <button type="button" onclick="_noCancelarNovoContato()" style="font-size:12px;padding:7px 16px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
@@ -1626,13 +1667,18 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
      </div>
     </div>
    </div>
+  </div>
 
-   <!-- ── BLOCO 3: LOCALIZAÇÃO ────────────────────────────────── -->
-   <div class="modal-section" style="margin-top:24px">Localização</div>
-   <div class="modal-grid col3">
-    <div class="mf">
-     <label>Estado <span class="req">*</span></label>
-     <select id="no-estado" onchange="loadCidades(this.value)">
+  <!-- ═══════════════════════ PASSO 3: LOCAL & NEGÓCIO ════════ -->
+  <div id="no-step-3" style="display:none;padding:32px 28px">
+   <div style="margin-bottom:24px">
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Localização e negócio</div>
+    <div style="font-size:12px;color:var(--muted)">Onde fica a obra e em qual etapa comercial ela está</div>
+   </div>
+   <div class="modal-grid col3" style="margin-bottom:20px;gap:16px">
+    <div class="mf" style="margin:0">
+     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Estado <span class="req">*</span></label>
+     <select id="no-estado" onchange="loadCidades(this.value)" style="margin-top:6px">
       <option value="">UF</option>
       <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
       <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
@@ -1643,29 +1689,26 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
       <option>SP</option><option>SE</option><option>TO</option>
      </select>
     </div>
-    <div class="mf span2">
-     <label>Cidade <span class="req">*</span></label>
-     <select id="no-cidade" disabled><option value="">Selecione o estado primeiro</option></select>
-     <div id="no-cidade-loading" style="display:none;font-size:11px;color:var(--muted);margin-top:4px">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite;vertical-align:middle"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Carregando municípios...
+    <div class="mf span2" style="margin:0">
+     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Cidade <span class="req">*</span></label>
+     <select id="no-cidade" disabled style="margin-top:6px"><option value="">Selecione o estado primeiro</option></select>
+     <div id="no-cidade-loading" style="display:none;font-size:11px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:5px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Carregando municípios...
      </div>
     </div>
    </div>
-
-   <!-- ── BLOCO 4: NEGÓCIO ────────────────────────────────────── -->
-   <div class="modal-section" style="margin-top:24px">Negócio</div>
-   <div class="modal-grid col2" style="margin-bottom:14px">
-    <div class="mf">
-     <label>Etapa do negócio <span class="req">*</span></label>
-     <select id="no-etapa" onchange="_selColorize(this,_SEL_ETAPA_NEGOCIO_COR)">
+   <div class="modal-grid col2" style="gap:16px;margin-bottom:20px">
+    <div class="mf" style="margin:0">
+     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Etapa do negócio <span class="req">*</span></label>
+     <select id="no-etapa" onchange="_selColorize(this,_SEL_ETAPA_NEGOCIO_COR)" style="margin-top:6px">
       <option value="">Selecione...</option>
       <option>Análise inicial</option><option>Pré-projeto</option><option>Follow-up</option>
       <option>Em Andamento</option><option>Projeto aprovado</option><option>Concluído</option>
      </select>
     </div>
-    <div class="mf">
-     <label>Canal de vendas</label>
-     <select id="no-canal">
+    <div class="mf" style="margin:0">
+     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Canal de vendas</label>
+     <select id="no-canal" style="margin-top:6px">
       <option value="">Selecione...</option>
       <option>Inbound (indicação)</option><option>Outbound (prospecção)</option>
       <option>Licitação pública</option><option>Parceiro comercial</option>
@@ -1673,38 +1716,46 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
      </select>
     </div>
    </div>
-   <div class="mf">
-    <label>Observações internas</label>
-    <textarea placeholder="Detalhes relevantes, requisitos específicos do cliente..." id="no-obs" style="height:60px;resize:vertical"></textarea>
+   <div class="mf" style="margin:0">
+    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Observações internas</label>
+    <textarea id="no-obs" placeholder="Detalhes relevantes, requisitos específicos do cliente..." style="margin-top:6px;height:72px;resize:vertical"></textarea>
    </div>
-
-  </div><!-- /modal-body -->
-
-  <!-- ── BLOCO 5: PROJETOS ──────────────────────────────────────── -->
-  <div style="margin:20px 0 0;border-top:1px solid var(--border);padding:20px 28px 0">
-   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div>
-     <div style="font-size:13px;font-weight:700;color:var(--text)">Projetos da obra</div>
-     <div style="font-size:11px;color:var(--muted);margin-top:3px">Configure os projetos vinculados — para Solar, preencha produto e valores para gerar proposta automática</div>
-    </div>
-    <button type="button" onclick="_noProjAdd()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 16px;border:1px solid var(--navy);border-radius:7px;background:transparent;color:var(--navy);cursor:pointer;white-space:nowrap;flex-shrink:0">
-     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"/></svg> Adicionar projeto
-    </button>
-   </div>
-   <div id="no-projetos-lista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px"></div>
   </div>
 
-  <!-- Footer -->
-  <div class="modal-footer" style="padding:18px 28px;margin-top:20px">
-   <div class="modal-footer-hint">Campos com <span>*</span> são obrigatórios</div>
-   <div class="modal-actions">
-    <button class="btn btn-ghost" onclick="closeNovaObra()">Cancelar</button>
-    <button class="btn btn-primary" id="no-submit-btn" onclick="submitNovaObra()" style="min-width:120px">Criar obra</button>
+  <!-- ══════════════════════════════ PASSO 4: PROJETOS ════════ -->
+  <div id="no-step-4" style="display:none;padding:32px 28px">
+   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px">
+    <div>
+     <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Projetos da obra</div>
+     <div style="font-size:12px;color:var(--muted)">Opcional — adicione projetos agora ou depois, dentro da obra. Para Solar, configure produto e valores para gerar proposta automática.</div>
+    </div>
+    <button type="button" onclick="_noProjAdd()" style="flex-shrink:0;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:9px 18px;border:1.5px solid var(--navy);border-radius:8px;background:transparent;color:var(--navy);cursor:pointer;white-space:nowrap;transition:all .15s" onmouseover="this.style.background='var(--navy)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--navy)'">
+     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3v10M3 8h10"/></svg>
+     Adicionar projeto
+    </button>
+   </div>
+   <div id="no-projetos-lista" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+
+  </div><!-- /scrollable area -->
+
+  <!-- ── Rodapé fixo: navegação ─────────────────────────────────── -->
+  <div style="flex-shrink:0;padding:16px 28px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)">
+   <button id="no-btn-back" onclick="_noWizardBack()" style="visibility:hidden;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--text);cursor:pointer;transition:all .15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3L5 8l5 5"/></svg>
+    Voltar
+   </button>
+   <div style="display:flex;align-items:center;gap:10px">
+    <button class="btn btn-ghost" onclick="closeNovaObra()" style="font-size:13px;padding:9px 18px">Cancelar</button>
+    <button id="no-btn-next" onclick="_noWizardNext()" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:9px 22px;border:none;border-radius:8px;background:var(--navy);color:#fff;cursor:pointer;transition:all .15s;min-width:130px;justify-content:center" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+     Próximo <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3l5 5-5 5"/></svg>
+    </button>
    </div>
   </div>
 
  </div><!-- /modal-obra-box -->
 </div><!-- /modal-nova-obra -->
+
 
 <!-- MAIN -->
 <main class="main">
@@ -8184,12 +8235,11 @@ function openNovaObra() {
  var cidadeSel = document.getElementById('no-cidade');
  if (cidadeSel) { cidadeSel.innerHTML = '<option value="">Selecione primeiro o estado</option>'; cidadeSel.disabled = true; }
 
- document.getElementById('no-tipo-solar-hint').style.display = 'none';
- document.getElementById('no-file-name').style.display = 'none';
+ var hint = document.getElementById('no-tipo-solar-hint');
+ if (hint) hint.style.display = 'none';
  document.querySelectorAll('.tipo-btn').forEach(function(b){ b.className = 'tipo-btn'; });
  document.getElementById('modal-nova-obra').classList.add('open');
- document.getElementById('modal-obra-box').scrollTop = 0;
- setTimeout(function(){ var el=document.getElementById('no-nome'); if(el)el.focus(); }, 100);
+ _noWizardInit();
 }
 
 function _noEmpresaChange(val) {
@@ -8270,18 +8320,118 @@ function handleModalBackdrop(e) {
  if (e.target === document.getElementById('modal-nova-obra')) closeNovaObra();
 }
 
+// ── Wizard Nova Obra ──────────────────────────────────────────────
+var _noStep = 1;
+var _noStepTitles = ['','Tipo de orçamento','Identificação da obra','Local & Negócio','Projetos'];
+
+function _noWizardInit() {
+ _noStep = 1;
+ _noWizardRender();
+}
+
+function _noWizardRender() {
+ // Mostra/esconde painéis
+ for (var i = 1; i <= 4; i++) {
+  var p = document.getElementById('no-step-'+i);
+  if (p) p.style.display = (i === _noStep) ? 'block' : 'none';
+ }
+ // Subtítulo
+ var sub = document.getElementById('no-step-subtitle');
+ if (sub) sub.textContent = 'Passo ' + _noStep + ' de 4 — ' + _noStepTitles[_noStep];
+ // Botão Voltar
+ var back = document.getElementById('no-btn-back');
+ if (back) back.style.visibility = _noStep > 1 ? 'visible' : 'hidden';
+ // Botão Próximo/Criar
+ var next = document.getElementById('no-btn-next');
+ if (next) {
+  if (_noStep === 4) {
+   next.innerHTML = 'Criar obra <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>';
+   next.onclick = submitNovaObra;
+  } else {
+   next.innerHTML = 'Próximo <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3l5 5-5 5"/></svg>';
+   next.onclick = _noWizardNext;
+  }
+ }
+ // Barra de progresso
+ for (var s = 1; s <= 4; s++) {
+  var circle = document.getElementById('no-wcircle-'+s);
+  var bar    = document.getElementById('no-wbar-'+s);
+  var line   = document.getElementById('no-wline-'+s);
+  if (!circle) continue;
+  var label = bar ? bar.querySelector('span') : null;
+  if (s < _noStep) {
+   // Concluído
+   circle.style.background = '#16a34a';
+   circle.style.borderColor = '#16a34a';
+   circle.style.color = '#fff';
+   circle.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2 9 6 13 14 4"/></svg>';
+   if (label) { label.style.color = '#16a34a'; }
+   if (line) line.style.background = '#16a34a';
+  } else if (s === _noStep) {
+   // Ativo
+   circle.style.background = 'var(--navy)';
+   circle.style.borderColor = 'var(--navy)';
+   circle.style.color = '#fff';
+   circle.innerHTML = s;
+   if (label) { label.style.color = 'var(--navy)'; label.style.fontWeight = '700'; }
+  } else {
+   // Futuro
+   circle.style.background = 'var(--surface2)';
+   circle.style.borderColor = 'var(--border)';
+   circle.style.color = 'var(--muted)';
+   circle.innerHTML = s;
+   if (label) { label.style.color = 'var(--muted)'; label.style.fontWeight = '600'; }
+   if (line) line.style.background = 'var(--border)';
+  }
+ }
+}
+
+function _noWizardGo(step) {
+ if (step < _noStep) { _noStep = step; _noWizardRender(); }
+}
+
+function _noWizardNext() {
+ if (!_noWizardValidate()) return;
+ if (_noStep < 4) { _noStep++; _noWizardRender(); }
+}
+
+function _noWizardBack() {
+ if (_noStep > 1) { _noStep--; _noWizardRender(); }
+}
+
+function _noWizardValidate() {
+ if (_noStep === 1) {
+  if (!_selectedTipo) { _showToast('Selecione o tipo de orçamento', 'aviso'); return false; }
+ }
+ if (_noStep === 2) {
+  var nome = (document.getElementById('no-nome')?.value || '').trim();
+  var emp  = document.getElementById('no-empresa')?.value || '';
+  if (!nome) { _showToast('Informe o nome da obra', 'aviso'); document.getElementById('no-nome').focus(); return false; }
+  if (!emp || emp === '__nova__') { _showToast('Selecione ou cadastre a empresa', 'aviso'); return false; }
+ }
+ if (_noStep === 3) {
+  var estado = document.getElementById('no-estado')?.value || '';
+  var cidade = document.getElementById('no-cidade')?.value || '';
+  var etapa  = document.getElementById('no-etapa')?.value  || '';
+  if (!estado) { _showToast('Selecione o estado', 'aviso'); return false; }
+  if (!cidade) { _showToast('Selecione a cidade', 'aviso'); return false; }
+  if (!etapa)  { _showToast('Selecione a etapa do negócio', 'aviso'); return false; }
+ }
+ return true;
+}
+
 function selectTipo(btn) {
  _selectedTipo = btn.dataset.tipo;
  document.querySelectorAll('.tipo-btn').forEach(function(b) {
   b.className = 'tipo-btn';
-  b.style.padding = '12px 8px';
  });
  var map = { 'Telhados':'sel-telhados','Modular':'sel-modular','Steel Frame':'sel-steel','Solar':'sel-solar' };
  btn.classList.add(map[_selectedTipo] || '');
  var hint = document.getElementById('no-tipo-solar-hint');
  if (hint) hint.style.display = _selectedTipo === 'Solar' ? 'flex' : 'none';
- // Re-renderiza projetos para mostrar/esconder campos Solar
  if (_noProjLista && _noProjLista.length) _noProjRender();
+ // Avança automaticamente para passo 2
+ setTimeout(function(){ _noWizardNext(); }, 220);
 }
 
 function handleNovaObraFile(e) {
@@ -8319,8 +8469,8 @@ async function submitNovaObra() {
   return;
  }
 
- var btn = document.getElementById('no-submit-btn');
- if (btn) { btn.disabled = true; btn.textContent = 'Criando...'; }
+ var btn = document.getElementById('no-btn-next');
+ if (btn) { btn.disabled = true; btn.innerHTML = 'Criando...'; }
 
  try {
   var userEmail = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || null;
@@ -8407,7 +8557,7 @@ async function submitNovaObra() {
   setTimeout(function(){ _spObraById(obraId); }, 400);
 
  } finally {
-  if (btn) { btn.disabled = false; btn.textContent = 'Criar obra'; }
+  if (btn) { btn.disabled = false; btn.innerHTML = 'Criar obra <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>'; }
  }
 }
 
