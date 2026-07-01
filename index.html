@@ -6906,8 +6906,13 @@ function _sptSwitch(id, btn) {
 }
 
 // ── Documentos: carregar por obra com navegação por tipo ──────────────────────
-var _docTiposOrdem = ['Proposta Comercial','Contrato','Projeto','ART','Nota Fiscal','Outro'];
+var _docTiposOrdem = ['Proposta Comercial','Contrato','Nota Fiscal','Projeto','ART','Pedido de Compra','Outro'];
+var _docCategoriaMapa = {
+ 'Proposta Comercial':'Comercial','Contrato':'Comercial','Nota Fiscal':'Comercial',
+ 'Projeto':'Técnico','ART':'Técnico','Pedido de Compra':'Técnico','Outro':'Técnico'
+};
 var _docTipoAtivo  = 'Proposta Comercial';
+var _docCatAtiva   = 'Todos';
 
 async function _spCarregarDocumentos(obraId) {
  var container = document.getElementById('sp-propostas-lista');
@@ -6955,8 +6960,23 @@ async function _spCarregarDocumentos(obraId) {
  Object.keys(grupos).forEach(function(k){ grupos[k].sort(function(a,b){ return new Date(b.created_at)-new Date(a.created_at); }); });
  if (infoEl) infoEl.textContent = docs.length + ' documento' + (docs.length !== 1 ? 's' : '');
 
- var tabsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="sp-doc-tabs">'
-  + _docTiposOrdem.map(function(t) {
+ // Tabs de categoria (Todos / Comercial / Técnico)
+ var catHtml = '<div style="display:flex;gap:6px;margin-bottom:10px">'
+  + ['Todos','Comercial','Técnico'].map(function(c) {
+   var isA = (c === _docCatAtiva);
+   return '<button id="spcat-' + c + '" onclick="_spDocCatFilter(\'' + c + '\')"'
+    + ' style="font-size:10px;font-weight:700;padding:4px 13px;border-radius:20px;cursor:pointer;border:1px solid '
+    + (isA ? 'var(--green)' : 'var(--border)') + ';background:' + (isA ? 'var(--green)' : 'var(--surface2)') + ';color:' + (isA ? '#fff' : 'var(--muted)') + '">'
+    + c + '</button>';
+  }).join('') + '</div>';
+
+ // Tabs de tipo (filtrados pela categoria ativa)
+ var tiposVisiveis = _docCatAtiva === 'Todos' ? _docTiposOrdem
+  : _docTiposOrdem.filter(function(t){ return _docCategoriaMapa[t] === _docCatAtiva; });
+ if (!tiposVisiveis.includes(_docTipoAtivo)) _docTipoAtivo = tiposVisiveis[0] || _docTiposOrdem[0];
+
+ var tabsHtml = catHtml + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="sp-doc-tabs">'
+  + tiposVisiveis.map(function(t) {
    var cnt = grupos[t].length;
    var isA = (t === _docTipoAtivo);
    return '<button onclick="_spDocTipoFilter(\'' + t + '\')" id="spdtab-' + t.replace(/[\s\/]+/g,'-') + '"'
@@ -6990,6 +7010,89 @@ function _spDocTipoFilter(tipo) {
  } catch(e){}
 }
 
+function _spDocCatFilter(cat) {
+ _docCatAtiva = cat;
+ var container = document.getElementById('sp-propostas-lista');
+ if (!container) return;
+ ['Todos','Comercial','Técnico'].forEach(function(c) {
+  var btn = document.getElementById('spcat-' + c);
+  if (!btn) return;
+  var isA = (c === cat);
+  btn.style.background  = isA ? 'var(--green)' : 'var(--surface2)';
+  btn.style.color       = isA ? '#fff' : 'var(--muted)';
+  btn.style.borderColor = isA ? 'var(--green)' : 'var(--border)';
+ });
+ try {
+  var grupos = JSON.parse(container.dataset.obraGrupos || '{}');
+  // Filtra tipos pela categoria ativa
+  var tiposFiltrados = cat === 'Todos' ? _docTiposOrdem
+   : _docTiposOrdem.filter(function(t){ return _docCategoriaMapa[t] === cat; });
+  // Reseta tabs de tipo para o primeiro do grupo filtrado
+  if (!tiposFiltrados.includes(_docTipoAtivo)) {
+   _docTipoAtivo = tiposFiltrados[0] || _docTiposOrdem[0];
+  }
+  // Reconstrói a lista de tabs e o conteúdo
+  var tabsEl = document.getElementById('sp-doc-tabs');
+  if (tabsEl) {
+   tabsEl.innerHTML = tiposFiltrados.map(function(t) {
+    var cnt = (grupos[t] || []).length;
+    var isA = (t === _docTipoAtivo);
+    return '<button onclick="_spDocTipoFilter(\'' + t + '\')" id="spdtab-' + t.replace(/[\s\/]+/g,'-') + '"'
+     + ' style="font-size:10px;font-weight:600;padding:4px 11px;border-radius:20px;cursor:pointer;white-space:nowrap;border:1px solid '
+     + (isA ? 'var(--navy)' : 'var(--border)') + ';background:' + (isA ? 'var(--navy)' : 'var(--surface2)') + ';color:' + (isA ? '#fff' : 'var(--muted)') + '">'
+     + t + (cnt > 0 ? ' (' + cnt + ')' : '') + '</button>';
+   }).join('');
+  }
+  var listEl = document.getElementById('sp-doc-list');
+  if (listEl) listEl.innerHTML = _spRenderDocList(grupos[_docTipoAtivo] || [], _docTipoAtivo, container.dataset.obraDocId || '');
+ } catch(e){}
+}
+
+function _spToggleUploadDoc() {
+ var f = document.getElementById('sp-upload-doc-form');
+ if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function _spEnviarDocObra() {
+ var obraId = _obraAtiva && _obraAtiva.id;
+ if (!obraId) { _showToast('Obra não identificada', 'erro'); return; }
+ var nome  = (document.getElementById('sp-upload-nome')?.value || '').trim();
+ var tipo  = document.getElementById('sp-upload-tipo')?.value || 'Outro';
+ var file  = document.getElementById('sp-upload-file')?.files?.[0];
+ if (!nome) { _showToast('Informe o nome do documento', 'aviso'); return; }
+ if (!file) { _showToast('Selecione um arquivo', 'aviso'); return; }
+
+ var ext  = file.name.split('.').pop();
+ var path = obraId + '/' + Date.now() + '_' + nome.replace(/[^a-zA-Z0-9_\-]/g,'_') + '.' + ext;
+ var categoria = _docCategoriaMapa[tipo] || 'Técnico';
+ var userEmail = localStorage.getItem('milatec-user-email') || '';
+
+ _showToast('Enviando arquivo...', 'info');
+ var upRes = await _sb.storage.from('documentos_obras').upload(path, file, { upsert: false });
+ if (upRes.error) { _showToast('Erro no upload: ' + upRes.error.message, 'erro'); return; }
+
+ var ins = await _sb.from('documentos').insert({
+  obra_id: obraId,
+  nome_arquivo: nome,
+  tipo: tipo,
+  categoria: categoria,
+  caminho_storage: path,
+  tamanho_bytes: file.size,
+  mime_type: file.type,
+  status: 'Ativo',
+  versao: 1,
+  criado_por: userEmail,
+  origem: 'upload_manual'
+ });
+ if (ins.error) { _showToast('Arquivo enviado, mas erro ao registrar: ' + ins.error.message, 'aviso'); return; }
+
+ _showToast('Documento anexado com sucesso!', 'ok');
+ document.getElementById('sp-upload-nome').value = '';
+ document.getElementById('sp-upload-file').value = '';
+ _spToggleUploadDoc();
+ _spCarregarDocumentos(obraId);
+}
+
 function _spRenderDocList(docs, tipo, obraId) {
  var sColors = { 'Gerada':'#6b6b82','Enviada':'#3B7CF0','Em negociação':'#9a7000','Aceita':'#28B548','Recusada':'#d32f2f','Ativo':'#28B548','ativo':'#28B548','Rascunho':'#9a7000','Cancelado':'#d32f2f','Realizada':'#28B548' };
  var sOpts   = tipo === 'Proposta Comercial'
@@ -7021,6 +7124,7 @@ function _spRenderDocList(docs, tipo, obraId) {
    + '<div style="font-size:12px;font-weight:700;color:var(--navy);line-height:1.4">' + nomeExib + '</div>'
    + '<div style="display:flex;align-items:center;gap:6px;margin-top:2px">'
    + '<span style="font-size:10px;color:var(--muted)">' + (d.tipo || '—') + '</span>'
+   + (d.categoria ? '<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:20px;border:1px solid var(--border);color:var(--muted)">' + d.categoria + '</span>' : '')
    + (isAirtable ? '<span style="font-size:9px;font-weight:600;color:#1a5c8a;background:#e8f4fd;border:1px solid #b3d9f5;padding:1px 6px;border-radius:20px">Enviado manualmente</span>' : '')
    + (d.status === 'Pendente Upload' ? '<span style="font-size:9px;font-weight:600;color:#d32f2f;background:#fdecea;border:1px solid #f5c6cb;padding:1px 6px;border-radius:20px">Arquivo indisponível</span>' : '')
    + '</div>'
@@ -7405,6 +7509,10 @@ function _spObrasRender(o, projetos, entregas, instalacoes) {
   + '<div class="sp-field"><div class="sp-label">UF</div><input class="sp-inp" id="sp-uf" value="' + (o.estado||'') + '" maxlength="2" style="text-transform:uppercase"></div>'
   + '<div class="sp-field"><div class="sp-label">Canal de vendas</div><select class="sp-inp" id="sp-canal">' + canalOpts + '</select></div>'
   + '</div>'
+  + '<div class="sp-g2">'
+  + '<div class="sp-field"><div class="sp-label">CNO (Cadastro Nacional de Obras)</div><input class="sp-inp" id="sp-cno" value="' + (o.cno||'') + '" placeholder="00.000.000.000-0"></div>'
+  + '<div class="sp-field"><div class="sp-label">Endereço de Entrega</div><input class="sp-inp" id="sp-end-entrega" value="' + (o.endereco_entrega||'') + '" placeholder="Rua, nº, cidade..."></div>'
+  + '</div>'
 
   + '<div class="sp-g2">'
   + '<div class="sp-field"><div class="sp-label">Quantidade</div><input class="sp-inp" id="sp-obra-quantidade" type="number" min="0" placeholder="—" value="' + (o.quantidade != null ? o.quantidade : '') + '"></div>'
@@ -7561,10 +7669,26 @@ function _spObrasRender(o, projetos, entregas, instalacoes) {
 
   // ── ABA: Documentos ──────────────────────────────────────────────────────────
   + '<div class="spt-panel" id="spt-documentos">'
-  + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">'
+  + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">'
   + '<div style="font-size:12px;font-weight:700;color:var(--text)">Documentos da Obra</div>'
-  + '<div style="font-size:10px;color:var(--muted)" id="sp-propostas-info"></div>'
+  + '<div style="display:flex;align-items:center;gap:8px">'
+  + '<span style="font-size:10px;color:var(--muted)" id="sp-propostas-info"></span>'
+  + '<button onclick="_spToggleUploadDoc()" style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--navy);border-radius:5px;background:var(--navy);color:#fff;cursor:pointer">+ Anexar</button>'
+  + '</div></div>'
+  + '<div id="sp-upload-doc-form" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">'
+  + '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Anexar Documento</div>'
+  + '<div class="sp-g2" style="gap:8px;margin-bottom:8px">'
+  + '<div class="sp-field"><div class="sp-label">Nome do documento *</div><input class="sp-inp" id="sp-upload-nome" placeholder="Ex: Contrato assinado v1"></div>'
+  + '<div class="sp-field"><div class="sp-label">Tipo</div><select class="sp-inp" id="sp-upload-tipo">'
+  + _docTiposOrdem.filter(function(t){return t!=="Proposta Comercial";}).map(function(t){return"<option>"+t+"</option>";}).join("")
+  + '</select></div>'
   + '</div>'
+  + '<div class="sp-field" style="margin-bottom:8px"><div class="sp-label">Arquivo (PDF, JPG, PNG, XLSX)</div>'
+  + '<input type="file" id="sp-upload-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.doc,.docx" style="font-size:12px;color:var(--text)"></div>'
+  + '<div style="display:flex;gap:6px">'
+  + '<button onclick="_spEnviarDocObra()" style="font-size:11px;font-weight:600;padding:5px 14px;border:none;border-radius:5px;background:var(--green);color:#fff;cursor:pointer">Enviar</button>'
+  + '<button onclick="_spToggleUploadDoc()" style="font-size:11px;padding:5px 14px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>'
+  + '</div></div>'
   + '<div id="sp-propostas-lista"><div class="sp-empty"><div style="font-size:11px;color:var(--muted)">Clique na aba para carregar...</div></div></div>'
   + '</div>'; // fim spt-panel documentos
 
@@ -7618,6 +7742,8 @@ async function _spSaveObraFull() {
   canal_vendas:      document.getElementById('sp-canal')?.value || null,
   quantidade:        document.getElementById('sp-obra-quantidade')?.value !== '' ? Number(document.getElementById('sp-obra-quantidade')?.value) : null,
   valor:             (function(){ var v=(document.getElementById('sp-obra-valor')?.value||'').trim(); if(!v)return null; var n=parseFloat(v.replace(/\./g,'').replace(',','.')); return isNaN(n)?null:n; })(),
+  cno:               document.getElementById('sp-cno')?.value?.trim() || null,
+  endereco_entrega:  document.getElementById('sp-end-entrega')?.value?.trim() || null,
   updated_at:        new Date().toISOString(),
  };
  const { error } = await _sb.from('obras').update(payload).eq('id', id);
