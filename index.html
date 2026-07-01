@@ -2035,6 +2035,9 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
   <button class="gestor-tab" id="gtab-timeline" onclick="_gestorSetView('timeline',this)">
    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="8" height="2.5" rx="1"/><rect x="5" y="7" width="10" height="2.5" rx="1"/><rect x="2" y="11" width="6" height="2.5" rx="1"/></svg>Timeline
   </button>
+  <button class="gestor-tab" id="gtab-setor" onclick="_gestorSetView('setor',this)">
+   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6.5" y="1" width="4" height="10" rx="1"/><rect x="12" y="1" width="3" height="12" rx="1"/></svg>Por Setor
+  </button>
   <button class="gestor-tab" id="gtab-metricas" onclick="_gestorSetView('metricas',this)">
    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="8" width="3" height="7" rx="1"/><rect x="6" y="5" width="3" height="10" rx="1"/><rect x="11" y="2" width="3" height="13" rx="1"/></svg>Métricas
   </button>
@@ -2103,6 +2106,13 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
     <div style="padding:40px;text-align:center;color:var(--muted);font-size:12px">Carregando Gantt...</div>
    </div>
    <div class="gestor-timeline-tooltip" id="gestor-timeline-tooltip"></div>
+  </div>
+
+  <!-- POR SETOR -->
+  <div id="gestor-panel-setor" style="display:none;flex:1;overflow-x:auto;overflow-y:auto;padding:16px">
+   <div id="gestor-setor-content" style="display:flex;gap:14px;align-items:flex-start;min-width:max-content">
+    <div style="padding:40px;text-align:center;color:var(--muted);font-size:12px">Carregando setores...</div>
+   </div>
   </div>
 
   <!-- MÉTRICAS -->
@@ -17066,20 +17076,114 @@ function _gestorApplyFilters() {
  var set = function(id, v){ var el=document.getElementById(id); if(el) el.textContent=v; };
  set('gst-total', total); set('gst-done', done); set('gst-prog', prog); set('gst-late', late);
 
- if (_gestorView === 'grid')     _gestorRenderGrid();
- else if (_gestorView === 'timeline')    _gestorRenderTimeline();
+ if (_gestorView === 'grid')          _gestorRenderGrid();
+ else if (_gestorView === 'timeline') _gestorRenderTimeline();
  else if (_gestorView === 'metricas') _gestorRenderMetricas();
+ else if (_gestorView === 'setor')    _gestorRenderSetor();
 }
 
 // ── Troca de aba ──────────────────────────────────────────────────────────
+var _SETOR_CORES = {
+ 'Projetos':   '#3b82f6',
+ 'Comercial':  '#22c55e',
+ 'TI':         '#8957e5',
+ 'Produção':   '#f59e0b',
+ 'Equipe P&D': '#ec4899',
+ 'Logística':  '#06b6d4',
+ 'Dados':      '#6366f1',
+ 'Marketing':  '#f97316',
+ 'Compras':    '#64748b',
+ 'Processos':  '#64748b',
+};
+
+function _setorCor(area) {
+ return _SETOR_CORES[area] || '#94a3b8';
+}
+
+function _gestorRenderSetor() {
+ var container = document.getElementById('gestor-setor-content');
+ if (!container) return;
+
+ // Agrupar por área
+ var groups = {};
+ var order = [];
+ _gestorFiltered.forEach(function(a) {
+  var key = a.area || '— Sem setor';
+  if (!groups[key]) { groups[key] = []; order.push(key); }
+  groups[key].push(a);
+ });
+
+ // Ordenar por volume desc
+ order.sort(function(a,b){ return groups[b].length - groups[a].length; });
+
+ var hoje = new Date(); hoje.setHours(0,0,0,0);
+
+ var cols = order.map(function(setor) {
+  var items = groups[setor];
+  var cor = _setorCor(setor);
+  var nLate = items.filter(function(a){ return _gIsLate(a); }).length;
+  var nDone = items.filter(function(a){ return _gIsDone(a.status); }).length;
+
+  var cards = items.slice(0,50).map(function(a) {
+   var late = _gIsLate(a);
+   var sc   = _gStatusCls(late ? 'Atrasado' : (a.status || 'A fazer'));
+   var statusDot = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + (late ? '#cf222e' : sc.dot) + ';flex-shrink:0;margin-top:3px"></span>';
+   var prazoTxt = '';
+   if (a.data_prazo) {
+    var dp = new Date(a.data_prazo + 'T00:00:00');
+    var diff = Math.floor((dp - hoje) / 86400000);
+    var dpStr = dp.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    prazoTxt = late ? '<span style="color:#cf222e;font-size:9px;font-weight:700">' + dpStr + '</span>'
+     : diff <= 3 ? '<span style="color:#b45309;font-size:9px">' + dpStr + '</span>'
+     : '<span style="color:var(--muted);font-size:9px">' + dpStr + '</span>';
+   }
+   var respStr = (a.responsavel || '').split(/[,;]+/)[0].trim();
+   var titulo = (a.titulo || '—').slice(0, 48);
+   return '<div onclick="_gestorRowClick(\'' + a.id + '\')" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 10px;cursor:pointer;transition:border-color .12s;margin-bottom:6px" onmouseover="this.style.borderColor=\'' + cor + '\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
+    + '<div style="display:flex;gap:6px;align-items:flex-start">'
+    + statusDot
+    + '<div style="flex:1;min-width:0">'
+    + '<div style="font-size:12px;font-weight:500;color:var(--text);line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">' + titulo + '</div>'
+    + '</div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">'
+    + '<span style="font-size:9px;background:' + sc.dot + '22;color:' + sc.dot + ';padding:1px 7px;border-radius:20px;font-weight:700">' + (late ? 'Atrasada' : (a.status || 'A fazer')) + '</span>'
+    + '<div style="display:flex;align-items:center;gap:6px">'
+    + (respStr ? '<span style="font-size:9px;color:var(--muted)">' + respStr.split(' ')[0] + '</span>' : '')
+    + (prazoTxt || '')
+    + '</div></div>'
+    + '</div>';
+  }).join('');
+
+  var moreHtml = items.length > 50
+   ? '<div style="font-size:10px;color:var(--muted);text-align:center;padding:6px">+' + (items.length - 50) + ' mais — use o filtro</div>'
+   : '';
+
+  return '<div style="min-width:220px;max-width:240px;flex-shrink:0;display:flex;flex-direction:column">'
+   + '<div style="background:' + cor + ';border-radius:8px 8px 0 0;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">'
+   + '<div style="font-size:12px;font-weight:700;color:#fff">' + setor + '</div>'
+   + '<div style="display:flex;align-items:center;gap:6px">'
+   + '<span style="background:rgba(255,255,255,.25);color:#fff;font-size:10px;font-weight:700;padding:1px 8px;border-radius:20px">' + items.length + '</span>'
+   + (nLate > 0 ? '<span style="background:#cf222e;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px">' + nLate + ' atras.</span>' : '')
+   + '</div></div>'
+   + '<div style="background:var(--surface2);border:1px solid ' + cor + '44;border-top:none;border-radius:0 0 8px 8px;padding:6px;overflow-y:auto;max-height:calc(100vh - 280px)">'
+   + '<div style="font-size:9px;color:var(--muted);text-align:center;padding:4px 0 8px">' + nDone + '/' + items.length + ' concluídas</div>'
+   + cards + moreHtml
+   + '</div></div>';
+ });
+
+ container.innerHTML = cols.length
+  ? cols.join('')
+  : '<div style="padding:40px;text-align:center;color:var(--muted);font-size:12px">Nenhuma atividade encontrada.</div>';
+}
+
 function _gestorSetView(v, btn) {
  _gestorView = v;
  document.querySelectorAll('.gestor-tab').forEach(function(b){ b.classList.remove('active'); });
  if (btn) btn.classList.add('active');
- var panels = { grid:'gestor-panel-grid', timeline:'gestor-panel-timeline', metricas:'gestor-panel-metricas' };
+ var panels = { grid:'gestor-panel-grid', timeline:'gestor-panel-timeline', metricas:'gestor-panel-metricas', setor:'gestor-panel-setor' };
  Object.keys(panels).forEach(function(k) {
   var p = document.getElementById(panels[k]);
-  if (p) p.style.display = k === v ? '' : 'none';
+  if (p) p.style.display = k === v ? (k === 'setor' ? 'flex' : '') : 'none';
  });
  // toolbar visível em todas as views (metricas também tem filtros agora)
  _gestorApplyFilters();
@@ -17228,7 +17332,7 @@ function _gestorRenderGrid() {
      + '<td>' + prazoHtml + '</td>'
      + '<td>' + inicioHtml + '</td>'
      + '<td><span style="font-size:10px;font-weight:700;color:' + prioClr + '">' + (a.prioridade || '—') + '</span></td>'
-     + '<td style="font-size:10px;color:var(--muted)">' + (a.area || '—') + '</td>'
+     + '<td>' + (a.area ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + _setorCor(a.area) + '22;color:' + _setorCor(a.area) + '">' + a.area + '</span>' : '<span style="color:var(--border)">—</span>') + '</td>'
      + '<td>' + (tipoNome ? '<span style="font-size:10px;font-weight:600;color:var(--text)">' + tipoNome + '</span>' : '<span style="color:var(--border)">—</span>') + '</td>'
      + '</tr>';
    });
