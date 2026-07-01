@@ -1547,19 +1547,45 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
  <div class="modal-grid col2" style="margin-top:14px">
  <div class="mf">
  <label>Empresa / Construtora <span class="req">*</span></label>
- <select id="no-empresa">
- <option value="">Selecione...</option>
- <option>Construtora Vega</option>
- <option>Grupo Delta Engenharia</option>
- <option>Solar Park Empreendimentos</option>
- <option>Prefeitura de Jundiaí</option>
- <option>Log Brasil S.A.</option>
- <option>+ Cadastrar nova empresa</option>
+ <select id="no-empresa" onchange="_noEmpresaChange(this.value)">
+ <option value="">Selecione a empresa...</option>
+ <option value="__nova__">+ Cadastrar nova empresa</option>
  </select>
+ <!-- Inline: criar nova empresa -->
+ <div id="no-nova-empresa-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+ <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Nova Empresa</div>
+ <div class="modal-grid col2" style="gap:8px">
+ <div class="mf" style="margin:0"><label style="font-size:10px">Nome *</label><input id="no-ne-nome" class="sp-inp" placeholder="Razão social"></div>
+ <div class="mf" style="margin:0"><label style="font-size:10px">CNPJ</label><input id="no-ne-cnpj" class="sp-inp" placeholder="00.000.000/0001-00"></div>
+ </div>
+ <div class="modal-grid col2" style="gap:8px;margin-top:6px">
+ <div class="mf" style="margin:0"><label style="font-size:10px">Estado</label><input id="no-ne-uf" class="sp-inp" placeholder="SE" maxlength="2" style="text-transform:uppercase"></div>
+ <div class="mf" style="margin:0"><label style="font-size:10px">Cidade</label><input id="no-ne-cidade" class="sp-inp" placeholder="Aracaju"></div>
+ </div>
+ <div style="display:flex;gap:6px;margin-top:8px">
+ <button type="button" onclick="_noSalvarNovaEmpresa()" style="font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:5px;background:var(--green);color:#fff;cursor:pointer">Salvar empresa</button>
+ <button type="button" onclick="_noCancelarNovaEmpresa()" style="font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
+ </div>
+ </div>
  </div>
  <div class="mf">
- <label>Contato responsável <span class="req">*</span></label>
- <input type="text" placeholder="Nome do contato" id="no-contato">
+ <label>Contato responsável</label>
+ <select id="no-contato-id">
+ <option value="">Selecione primeiro a empresa...</option>
+ </select>
+ <!-- Inline: criar novo contato -->
+ <div id="no-novo-contato-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+ <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Novo Contato</div>
+ <div class="modal-grid col2" style="gap:8px">
+ <div class="mf" style="margin:0"><label style="font-size:10px">Nome *</label><input id="no-nc-nome" class="sp-inp" placeholder="Nome completo"></div>
+ <div class="mf" style="margin:0"><label style="font-size:10px">Email</label><input id="no-nc-email" class="sp-inp" placeholder="email@empresa.com" type="email"></div>
+ </div>
+ <div class="mf" style="margin:0;margin-top:6px"><label style="font-size:10px">Cargo</label><input id="no-nc-cargo" class="sp-inp" placeholder="Ex: Engenheiro de Projetos"></div>
+ <div style="display:flex;gap:6px;margin-top:8px">
+ <button type="button" onclick="_noSalvarNovoContato()" style="font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:5px;background:var(--green);color:#fff;cursor:pointer">Salvar contato</button>
+ <button type="button" onclick="_noCancelarNovoContato()" style="font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>
+ </div>
+ </div>
  </div>
  </div>
 
@@ -1671,11 +1697,28 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 
  </div>
 
- <div class="modal-footer">
+ <!-- Criar projeto vinculado -->
+ <div class="modal-divider"></div>
+ <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
+ <input type="checkbox" id="no-criar-projeto" style="width:15px;height:15px;cursor:pointer" onchange="document.getElementById('no-projeto-fields').style.display=this.checked?'block':'none'">
+ <label for="no-criar-projeto" style="font-size:12px;font-weight:600;cursor:pointer;color:var(--text)">Criar projeto vinculado à obra</label>
+ </div>
+ <div id="no-projeto-fields" style="display:none;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+ <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Projeto inicial</div>
+ <div class="modal-grid col2" style="gap:8px">
+ <div class="mf" style="margin:0"><label style="font-size:10px">Nome do projeto</label><input id="no-proj-nome" class="sp-inp" placeholder="Deixe em branco para usar o nome da obra"></div>
+ <div class="mf" style="margin:0"><label style="font-size:10px">Etapa do projeto</label>
+ <select id="no-proj-etapa" class="sp-inp">
+ <option>Proposta Enviada</option><option>Anteprojeto</option><option>Projeto Executivo</option><option>Em Produção</option><option>Concluído</option>
+ </select></div>
+ </div>
+ </div>
+
+ <div class="modal-footer" style="margin-top:16px">
  <div class="modal-footer-hint">Campos com <span>*</span> são obrigatórios</div>
  <div class="modal-actions">
  <button class="btn btn-ghost" onclick="closeNovaObra()">Cancelar</button>
- <button class="btn btn-primary" onclick="submitNovaObra()">Criar obra</button>
+ <button class="btn btn-primary" id="no-submit-btn" onclick="submitNovaObra()">Criar obra</button>
  </div>
  </div>
  </div>
@@ -5592,6 +5635,7 @@ async function _spGerarProposta() {
  const acao          = document.getElementById('sp-solar-acao')?.value || 'registrar';
  const registrar     = acao !== 'abrir';
  const atualizarObra = acao === 'registrar-obra';
+ const criarProj     = acao === 'registrar-projeto';
  const novaEtapa     = atualizarObra ? (document.getElementById('sp-solar-nova-etapa')?.value || '') : null;
 
  const o = _obraAtiva || {};
@@ -5672,7 +5716,32 @@ async function _spGerarProposta() {
      if (atualizarObra && novaEtapa && o.id) {
       await updateObraEtapa(o.id, novaEtapa, 'proposta');
      }
-     _showToast('Proposta V' + versao + ' gerada e registrada com sucesso!', 'ok');
+
+     // Solar → criar projeto automático se solicitado e não existe projeto
+     if (acao === 'registrar-projeto' && !projSolar && o.id) {
+      var projRes = await _sb.from('projetos').insert({
+       nome: (o.nome || 'Obra') + ' — Solar ' + prod,
+       obra_id: o.id,
+       empresa_id: o.empresa_id || null,
+       tipo_orcamento: 'Solar',
+       etapa_projeto: 'Proposta Enviada',
+       produto: [prod],
+       quantidade: qtd,
+       valor_unitario: vuni,
+       frete: frete,
+       aliquota_icms: icms,
+       consumidor_final: consumidorFinal,
+       difal_percentual: difalPercentual,
+      }).select('id').single();
+      if (!projRes.error && projRes.data?.id) {
+       await _sb.from('propostas').update({ projeto_id: projRes.data.id }).eq('id', propostaId);
+       _showToast('Projeto Solar criado e vinculado à proposta!', 'ok');
+      } else {
+       _showToast('Proposta criada, mas erro ao criar projeto: ' + (projRes.error?.message || ''), 'aviso');
+      }
+     } else {
+      _showToast('Proposta V' + versao + ' gerada e registrada com sucesso!', 'ok');
+     }
     }
    }
   } else if (!registrar) {
@@ -7632,6 +7701,7 @@ function _spObrasRender(o, projetos, entregas, instalacoes) {
      + '<option value="abrir">Gerar documento apenas (não registrar)</option>'
      + '<option value="registrar" selected>Gerar e registrar no sistema</option>'
      + '<option value="registrar-obra">Gerar, registrar e atualizar etapa da obra</option>'
+     + '<option value="registrar-projeto">Gerar, registrar e criar projeto Solar automaticamente</option>'
      + '</select>'
      + '<div id="sp-solar-etapa-wrap" style="display:none;margin-top:6px">'
      + '<div class="sp-label" style="margin-bottom:4px">Nova etapa da obra</div>'
@@ -7982,28 +8052,112 @@ async function loadCidades(uf) {
 
 function openNovaObra() {
  _selectedTipo = null;
- // Resetar campos
- ['no-nome','no-contato','no-obs'].forEach(id => {
- const el = document.getElementById(id);
- if (el) el.value = '';
+ // Resetar campos texto
+ ['no-nome','no-obs','no-ne-nome','no-ne-cnpj','no-ne-uf','no-ne-cidade','no-nc-nome','no-nc-email','no-nc-cargo','no-proj-nome'].forEach(function(id){
+  var el = document.getElementById(id); if (el) el.value = '';
  });
- ['no-empresa','no-etapa','no-canal'].forEach(id => {
- const el = document.getElementById(id);
- if (el) el.selectedIndex = 0;
- });
+ ['no-etapa','no-canal'].forEach(function(id){ var el = document.getElementById(id); if (el) el.selectedIndex = 0; });
  _selColorize(document.getElementById('no-etapa'), _SEL_ETAPA_NEGOCIO_COR);
- // Resetar estado e cidade
- const estadoSel = document.getElementById('no-estado');
- estadoSel.value = '';
- const cidadeSel = document.getElementById('no-cidade');
- cidadeSel.innerHTML = '<option value="">Selecione primeiro o estado</option>';
- cidadeSel.disabled = true;
+
+ // Popula empresa a partir do cache
+ var empSel = document.getElementById('no-empresa');
+ if (empSel) {
+  empSel.innerHTML = '<option value="">Selecione a empresa...</option>'
+   + (_empresasArr || []).map(function(e){ return '<option value="'+e.id+'">'+e.nome+'</option>'; }).join('')
+   + '<option value="__nova__">+ Cadastrar nova empresa</option>';
+ }
+ // Reseta contato
+ var cntSel = document.getElementById('no-contato-id');
+ if (cntSel) cntSel.innerHTML = '<option value="">Selecione primeiro a empresa...</option>';
+
+ // Oculta boxes inline
+ ['no-nova-empresa-box','no-novo-contato-box','no-projeto-fields'].forEach(function(id){
+  var el = document.getElementById(id); if (el) el.style.display = 'none';
+ });
+ var chk = document.getElementById('no-criar-projeto'); if (chk) chk.checked = false;
+
+ // Estado/cidade
+ var estadoSel = document.getElementById('no-estado');
+ if (estadoSel) estadoSel.value = '';
+ var cidadeSel = document.getElementById('no-cidade');
+ if (cidadeSel) { cidadeSel.innerHTML = '<option value="">Selecione primeiro o estado</option>'; cidadeSel.disabled = true; }
+
  document.getElementById('no-tipo-solar-hint').style.display = 'none';
  document.getElementById('no-file-name').style.display = 'none';
- document.querySelectorAll('.tipo-btn').forEach(b => b.className = 'tipo-btn');
+ document.querySelectorAll('.tipo-btn').forEach(function(b){ b.className = 'tipo-btn'; });
  document.getElementById('modal-nova-obra').classList.add('open');
  document.getElementById('modal-obra-box').scrollTop = 0;
- setTimeout(() => document.getElementById('no-nome').focus(), 100);
+ setTimeout(function(){ var el=document.getElementById('no-nome'); if(el)el.focus(); }, 100);
+}
+
+function _noEmpresaChange(val) {
+ var box = document.getElementById('no-nova-empresa-box');
+ if (val === '__nova__') { if (box) box.style.display = 'block'; return; }
+ if (box) box.style.display = 'none';
+ // Popula contatos filtrados pela empresa
+ var cntSel = document.getElementById('no-contato-id');
+ if (!cntSel) return;
+ var filtrados = (_contatosArr || []).filter(function(c){ return c.empresa_id === val; });
+ cntSel.innerHTML = '<option value="">Selecionar contato...</option>'
+  + filtrados.map(function(c){ return '<option value="'+c.id+'">'+c.nome_completo+(c.cargo?' · '+c.cargo:'')+'</option>'; }).join('')
+  + '<option value="__novo__">+ Cadastrar novo contato</option>';
+ document.getElementById('no-novo-contato-box').style.display = 'none';
+ cntSel.onchange = function() {
+  document.getElementById('no-novo-contato-box').style.display = this.value === '__novo__' ? 'block' : 'none';
+ };
+}
+
+async function _noSalvarNovaEmpresa() {
+ var nome = (document.getElementById('no-ne-nome')?.value || '').trim();
+ if (!nome) { _showToast('Informe o nome da empresa', 'aviso'); return; }
+ var res = await _sb.from('empresas').insert({
+  nome: nome,
+  cnpj: document.getElementById('no-ne-cnpj')?.value?.trim() || null,
+  estado: document.getElementById('no-ne-uf')?.value?.trim()?.toUpperCase() || null,
+  cidade: document.getElementById('no-ne-cidade')?.value?.trim() || null,
+ }).select('id,nome').single();
+ if (res.error) { _showToast('Erro ao criar empresa: '+res.error.message, 'erro'); return; }
+ var empSel = document.getElementById('no-empresa');
+ var opt = document.createElement('option');
+ opt.value = res.data.id; opt.textContent = res.data.nome; opt.selected = true;
+ empSel.insertBefore(opt, empSel.querySelector('option[value="__nova__"]'));
+ empSel.value = res.data.id;
+ _empresasArr = (_empresasArr || []).concat([res.data]);
+ document.getElementById('no-nova-empresa-box').style.display = 'none';
+ _noEmpresaChange(res.data.id);
+ _showToast('Empresa criada com sucesso!', 'ok');
+}
+function _noCancelarNovaEmpresa() {
+ document.getElementById('no-nova-empresa-box').style.display = 'none';
+ var empSel = document.getElementById('no-empresa'); if (empSel) empSel.value = '';
+}
+
+async function _noSalvarNovoContato() {
+ var empresaId = document.getElementById('no-empresa')?.value;
+ var nome = (document.getElementById('no-nc-nome')?.value || '').trim();
+ if (!nome) { _showToast('Informe o nome do contato', 'aviso'); return; }
+ var res = await _sb.from('contatos').insert({
+  nome_completo: nome,
+  email_empresarial: document.getElementById('no-nc-email')?.value?.trim() || null,
+  cargo: document.getElementById('no-nc-cargo')?.value?.trim() || null,
+ }).select('id,nome_completo,cargo').single();
+ if (res.error) { _showToast('Erro ao criar contato: '+res.error.message, 'erro'); return; }
+ if (empresaId && empresaId !== '__nova__') {
+  await _sb.from('contatos_empresas').insert({ contato_id: res.data.id, empresa_id: empresaId });
+ }
+ var cntSel = document.getElementById('no-contato-id');
+ var opt = document.createElement('option');
+ opt.value = res.data.id;
+ opt.textContent = res.data.nome_completo + (res.data.cargo ? ' · '+res.data.cargo : '');
+ opt.selected = true;
+ cntSel.insertBefore(opt, cntSel.querySelector('option[value="__novo__"]'));
+ cntSel.value = res.data.id;
+ document.getElementById('no-novo-contato-box').style.display = 'none';
+ _showToast('Contato criado com sucesso!', 'ok');
+}
+function _noCancelarNovoContato() {
+ document.getElementById('no-novo-contato-box').style.display = 'none';
+ var cntSel = document.getElementById('no-contato-id'); if (cntSel) cntSel.value = '';
 }
 
 function closeNovaObra() {
@@ -8040,41 +8194,76 @@ function handleNovaObraFile(e) {
  document.getElementById('no-drop').style.borderColor = 'var(--green)';
 }
 
-function submitNovaObra() {
- const nome = document.getElementById('no-nome').value.trim();
- const empresa = document.getElementById('no-empresa').value;
- const contato = document.getElementById('no-contato').value.trim();
- const cidade = document.getElementById('no-cidade').value;
- const estado = document.getElementById('no-estado').value;
- const etapa = document.getElementById('no-etapa').value;
+async function submitNovaObra() {
+ var nome      = (document.getElementById('no-nome')?.value || '').trim();
+ var empresaId = document.getElementById('no-empresa')?.value || '';
+ var contatoId = document.getElementById('no-contato-id')?.value || '';
+ var cidade    = document.getElementById('no-cidade')?.value || '';
+ var estado    = document.getElementById('no-estado')?.value || '';
+ var etapa     = document.getElementById('no-etapa')?.value || '';
+ var canal     = document.getElementById('no-canal')?.value || null;
+ var tipo      = _selectedTipo;
+ var criarProj = document.getElementById('no-criar-projeto')?.checked;
 
- const errors = [];
- if (!nome) errors.push('Nome da obra');
- if (!empresa) errors.push('Empresa');
- if (!contato) errors.push('Contato');
- if (!cidade) errors.push('Cidade');
- if (!estado) errors.push('Estado');
- if (!etapa) errors.push('Etapa do negócio');
- if (!_selectedTipo) errors.push('Tipo de orçamento');
-
- if (errors.length) {
- // highlight fields sem valor
- ['no-nome','no-contato'].forEach(id => {
- const el = document.getElementById(id);
- if (el && !el.value.trim()) el.style.borderColor = 'var(--red)';
- });
- if (!cidade) document.getElementById('no-cidade').style.borderColor = 'var(--red)';
- if (!_selectedTipo) {
- document.getElementById('no-tipo-grid').style.outline = '2px solid var(--red)';
- document.getElementById('no-tipo-grid').style.borderRadius = '8px';
- setTimeout(() => document.getElementById('no-tipo-grid').style.outline = '', 2000);
- }
- return;
+ // Validação
+ var erros = [];
+ if (!nome) erros.push('Nome da obra');
+ if (!empresaId || empresaId === '__nova__') erros.push('Empresa');
+ if (!cidade) erros.push('Cidade');
+ if (!estado) erros.push('Estado');
+ if (!etapa) erros.push('Etapa do negócio');
+ if (!tipo) erros.push('Tipo de orçamento');
+ if (erros.length) {
+  _showToast('Preencha: ' + erros.join(', '), 'aviso');
+  if (!nome) { var el=document.getElementById('no-nome'); if(el) el.style.borderColor='var(--red)'; }
+  if (!tipo) { var tg=document.getElementById('no-tipo-grid'); if(tg){tg.style.outline='2px solid var(--red)';tg.style.borderRadius='8px';setTimeout(function(){tg.style.outline='';},2000);} }
+  return;
  }
 
- // Simulação: fechar modal e ir para obra-detalhe
- closeNovaObra();
- go('obra-detalhe');
+ var btn = document.getElementById('no-submit-btn');
+ if (btn) { btn.disabled = true; btn.textContent = 'Criando...'; }
+
+ try {
+  var userEmail = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || null;
+
+  // 1. Criar obra
+  var obraRes = await _sb.from('obras').insert({
+   nome: nome, tipo_obra: [tipo], etapa_negocio: etapa,
+   cidade: cidade, estado: estado, canal_vendas: canal,
+   criado_por: userEmail,
+  }).select('id').single();
+
+  if (obraRes.error) { _showToast('Erro ao criar obra: ' + _supaErrPt(obraRes.error.message), 'erro'); return; }
+  var obraId = obraRes.data.id;
+
+  // 2. Vincular empresa
+  await _sb.from('empresas_obras').insert({ obra_id: obraId, empresa_id: empresaId });
+
+  // 3. Vincular contato (se selecionado)
+  if (contatoId && contatoId !== '__novo__') {
+   await _sb.from('contatos_obras').insert({ obra_id: obraId, contato_id: contatoId });
+  }
+
+  // 4. Criar projeto vinculado (se checkbox marcado)
+  if (criarProj) {
+   var projNome = (document.getElementById('no-proj-nome')?.value || '').trim() || nome;
+   var projEtapa = document.getElementById('no-proj-etapa')?.value || 'Proposta Enviada';
+   await _sb.from('projetos').insert({
+    nome: projNome, obra_id: obraId, empresa_id: empresaId,
+    tipo_orcamento: tipo, etapa_projeto: projEtapa,
+   });
+  }
+
+  _showToast('Obra criada com sucesso!', 'ok');
+  closeNovaObra();
+  await _dbLoadObras();
+  if (typeof _dbLoadObrasKanban === 'function') _dbLoadObrasKanban();
+  // Abre o painel da nova obra
+  setTimeout(function(){ _spObraById(obraId); }, 400);
+
+ } finally {
+  if (btn) { btn.disabled = false; btn.textContent = 'Criar obra'; }
+ }
 }
 
 // Fechar com Escape
