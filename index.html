@@ -92,7 +92,7 @@
  .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
  .kpi-val{font-size:28px;font-weight:700}.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
  /* TABLES */
- .tbl-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+ .tbl-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow-x:auto;overflow-y:visible}
  .tbl-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
  .tbl-title{font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;letter-spacing:-.1px}.tbl-acts{margin-left:auto;display:flex;gap:8px}
  table{width:100%;border-collapse:collapse}
@@ -2853,7 +2853,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
  </button>
  </div>
  </div>
- <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+ <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;position:sticky;top:52px;z-index:8;background:var(--bg);padding:8px 0 4px;margin-top:-4px">
  <!-- Busca -->
  <div class="search" style="min-width:220px;flex:1">
  <input type="text" id="obras-search" placeholder="Buscar obra ou cliente..." oninput="filterObras()">
@@ -6740,10 +6740,14 @@ async function _dbLoadObrasKanban() {
   const qtdTxt = (o.quantidade != null) ? o.quantidade : '—';
   const dataTxt = o.data_envio_proposta ? new Date(o.data_envio_proposta+'T00:00:00').toLocaleDateString('pt-BR') : '—';
   const podOrc = tipos.some(t => podGerarOrc.includes(t));
+  const criadoTxt = o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : '';
   const card  = document.createElement('div');
   card.className = 'obra-card';
   card.dataset.id = o.id;
   card.dataset.etapa = o.etapa_negocio || '';
+  card.dataset.tipo = (o.tipo_obra || []).join(',').toLowerCase();
+  card.dataset.canal = (o.canal_vendas || '').toLowerCase();
+  card.dataset.search = [(o.nome||''), empNome, (o.cidade||''), (o.canal_vendas||''), (o.tipo_obra||[]).join(' ')].join(' ').toLowerCase();
   card.draggable = true;
   card.addEventListener('dragstart', _onObraCardDragStart);
   card.addEventListener('dragend', _onObraCardDragEnd);
@@ -6754,7 +6758,7 @@ async function _dbLoadObrasKanban() {
    <div class="oc-row"><span>Canal</span><span class="oc-val">${o.canal_vendas||'—'}</span></div>
    <div class="oc-row"><span>Qtd.</span><span class="oc-val">${qtdTxt}</span></div>
    <div class="oc-row"><span>Valor</span><span class="oc-val">${valorTxt}</span></div>
-   <div class="oc-meta"><span class="oc-date">${dataTxt}</span></div>
+   <div class="oc-meta"><span class="oc-date">${dataTxt}</span>${criadoTxt ? `<span style="color:var(--muted);font-size:10px">Criado ${criadoTxt}</span>` : ''}</div>
    ${podOrc ? `<div class="oc-actions"><button class="btn btn-primary btn-sm" style="width:100%;justify-content:center" onclick="event.stopPropagation();openObraDetalhe('${o.id}')">Gerar Orçamento</button></div>` : ''}
   `;
   card.onclick = () => _spObraById(o.id);
@@ -13256,51 +13260,66 @@ function _updateCond(id, key, val) {
 
 function filterObras() {
  var busca = ((document.getElementById('obras-search') || {}).value || '').toLowerCase().trim();
-
- var rows = document.querySelectorAll('#obras-tbody tr');
+ var activeConds = _obrasConditions.filter(function(c) { return !!c.value; }).length;
  var visivel = 0;
 
+ // ── Tabela ──────────────────────────────────────────────────────────────────
+ var rows = document.querySelectorAll('#obras-tbody tr');
  rows.forEach(function(tr) {
  var ok = true;
-
- // Busca textual
  if (busca && !tr.textContent.toLowerCase().includes(busca)) ok = false;
-
- // Condições estruturadas — operadores estilo Airtable
  _obrasConditions.forEach(function(cond) {
- var cellVal = (tr.dataset[cond.field] || '').toLowerCase().trim();
- var condVal = (cond.value || '').toLowerCase().trim();
- // is_empty / is_not_empty não precisam de value
- if (cond.op === 'is_empty' && cellVal !== '') ok = false;
- if (cond.op === 'is_not_empty' && cellVal === '') ok = false;
- // operadores que precisam de value — ignorar se vazio
- if (!condVal && cond.op !== 'is_empty' && cond.op !== 'is_not_empty') return;
- if (cond.op === 'is' && cellVal !== condVal) ok = false;
- if (cond.op === 'is_not' && cellVal === condVal) ok = false;
- if (cond.op === 'contains' && !cellVal.includes(condVal)) ok = false;
- if (cond.op === 'not_contains' && cellVal.includes(condVal)) ok = false;
+  var cellVal = (tr.dataset[cond.field] || '').toLowerCase().trim();
+  var condVal = (cond.value || '').toLowerCase().trim();
+  if (cond.op === 'is_empty' && cellVal !== '') ok = false;
+  if (cond.op === 'is_not_empty' && cellVal === '') ok = false;
+  if (!condVal && cond.op !== 'is_empty' && cond.op !== 'is_not_empty') return;
+  if (cond.op === 'is' && cellVal !== condVal) ok = false;
+  if (cond.op === 'is_not' && cellVal === condVal) ok = false;
+  if (cond.op === 'contains' && !cellVal.includes(condVal)) ok = false;
+  if (cond.op === 'not_contains' && cellVal.includes(condVal)) ok = false;
  });
-
  tr.style.display = ok ? '' : 'none';
  if (ok) visivel++;
  });
 
- // Badge com contagem de condições ativas
- var activeConds = _obrasConditions.filter(function(c) { return !!c.value; }).length;
+ // ── Kanban ───────────────────────────────────────────────────────────────────
+ var cards = document.querySelectorAll('#obras-kanban .obra-card');
+ cards.forEach(function(card) {
+ var ok = true;
+ if (busca && !(card.dataset.search || '').includes(busca)) ok = false;
+ _obrasConditions.forEach(function(cond) {
+  var cellVal = (card.dataset[cond.field] || '').toLowerCase().trim();
+  var condVal = (cond.value || '').toLowerCase().trim();
+  if (cond.op === 'is_empty' && cellVal !== '') ok = false;
+  if (cond.op === 'is_not_empty' && cellVal === '') ok = false;
+  if (!condVal && cond.op !== 'is_empty' && cond.op !== 'is_not_empty') return;
+  if (cond.op === 'is' && cellVal !== condVal) ok = false;
+  if (cond.op === 'is_not' && cellVal === condVal) ok = false;
+  if (cond.op === 'contains' && !cellVal.includes(condVal)) ok = false;
+  if (cond.op === 'not_contains' && cellVal.includes(condVal)) ok = false;
+ });
+ card.style.display = ok ? '' : 'none';
+ });
+ // Atualiza contadores das colunas kanban após filtro
+ document.querySelectorAll('#obras-kanban .kanban-col').forEach(function(col) {
+ var badge = col.querySelector('.kc-count');
+ if (badge) badge.textContent = col.querySelectorAll('.obra-card:not([style*="display: none"]):not([style*="display:none"])').length;
+ });
+
+ // ── Badge e contador ─────────────────────────────────────────────────────────
  var badge = document.getElementById('filter-badge');
  if (badge) {
  badge.textContent = activeConds;
  badge.style.display = activeConds > 0 ? 'inline' : 'none';
  }
-
- // Contador de resultados
  var countEl = document.getElementById('obras-filter-count');
  if (countEl) {
  if (activeConds > 0 || busca) {
- countEl.textContent = visivel + (visivel === 1 ? ' resultado' : ' resultados');
- countEl.style.display = 'inline';
+  countEl.textContent = visivel + (visivel === 1 ? ' resultado' : ' resultados');
+  countEl.style.display = 'inline';
  } else {
- countEl.style.display = 'none';
+  countEl.style.display = 'none';
  }
  }
 }
