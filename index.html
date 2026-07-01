@@ -7000,21 +7000,30 @@ function _sptSwitch(id, btn) {
 }
 
 // ── Documentos: carregar por obra com navegação por tipo ──────────────────────
-var _docTiposOrdem = ['Proposta Comercial','Contrato','Nota Fiscal','Projeto','ART','Pedido de Compra','Outro'];
+// 9 tipos de Obras (conforme campos Airtable) + Outro como fallback
+var _docTiposOrdem = [
+ 'Proposta Comercial','Contrato','Contrato Instalação','Enviado pelo Cliente',
+ 'Pedido de Compra','ART','Cálculo Estrutural','CNPJ & CNO','Boletim de Medição','Outro'
+];
 var _docCategoriaMapa = {
- 'Proposta Comercial':'Comercial','Contrato':'Comercial','Nota Fiscal':'Comercial',
- 'Projeto':'Técnico','ART':'Técnico','Pedido de Compra':'Técnico','Outro':'Técnico'
+ 'Proposta Comercial':'Comercial','Contrato':'Comercial','Contrato Instalação':'Comercial','Enviado pelo Cliente':'Comercial',
+ 'Pedido de Compra':'Técnico','ART':'Técnico','Cálculo Estrutural':'Técnico','CNPJ & CNO':'Técnico','Boletim de Medição':'Técnico',
+ 'Outro':'Técnico'
 };
 // Mapa de tipos snake_case do banco → nome de exibição
 var _docTipoNormMapa = {
  'proposta_comercial':'Proposta Comercial',
- 'contrato':'Contrato','contrato_instalacao':'Contrato',
- 'nota_fiscal':'Nota Fiscal',
- 'projeto':'Projeto','projeto_executivo':'Projeto','calculo_estrutural':'Projeto',
- 'art':'ART',
+ 'contrato':'Contrato',
+ 'contrato_instalacao':'Contrato Instalação',
+ 'enviado_cliente':'Enviado pelo Cliente',
  'pedido_compra':'Pedido de Compra',
- 'cnpj_cno':'Outro','enviado_cliente':'Outro','fotos_obra':'Outro',
- 'boletim_medicao':'Outro','romaneio_entrega':'Outro','ordem_producao':'Outro',
+ 'art':'ART',
+ 'calculo_estrutural':'Cálculo Estrutural',
+ 'cnpj_cno':'CNPJ & CNO',
+ 'boletim_medicao':'Boletim de Medição',
+ // Tipos de outros contextos (Entregas/Projetos) → Outro quando aparecem em Obras
+ 'nota_fiscal':'Outro','projeto':'Outro','projeto_executivo':'Outro',
+ 'fotos_obra':'Outro','romaneio_entrega':'Outro','ordem_producao':'Outro',
  'documento_especifico':'Outro'
 };
 function _docNormTipo(tipo) {
@@ -7162,7 +7171,59 @@ function _spDocCatFilter(cat) {
 
 function _spToggleUploadDoc() {
  var f = document.getElementById('sp-upload-doc-form');
- if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+ if (!f) return;
+ var isOpen = f.style.display !== 'none';
+ f.style.display = isOpen ? 'none' : 'block';
+ if (!isOpen) {
+  // Reset form ao abrir
+  var nEl = document.getElementById('sp-upload-nome');
+  var fEl = document.getElementById('sp-upload-file');
+  var lbl = document.getElementById('sp-upload-file-label');
+  if (nEl) nEl.value = '';
+  if (fEl) fEl.value = '';
+  if (lbl) lbl.innerHTML = 'Clique para selecionar ou arraste o arquivo aqui<br><span style="font-size:10px">PDF, JPG, PNG, XLSX, DOC</span>';
+  var dz = document.getElementById('sp-upload-dropzone');
+  if (dz) { dz.style.borderColor = 'var(--border)'; dz.style.background = ''; }
+  setTimeout(function(){ var el = document.getElementById('sp-upload-nome'); if(el) el.focus(); }, 50);
+ }
+}
+
+function _spUploadFileChange(input) {
+ var file = input.files && input.files[0];
+ var lbl = document.getElementById('sp-upload-file-label');
+ var dz  = document.getElementById('sp-upload-dropzone');
+ if (!file || !lbl) return;
+ var kb = (file.size / 1024).toFixed(0);
+ var mb = file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1) + ' MB' : kb + ' KB';
+ lbl.innerHTML = '<span style="color:var(--green);font-weight:700">✓ ' + file.name + '</span><br><span style="font-size:10px;color:var(--muted)">' + mb + '</span>';
+ if (dz) { dz.style.borderColor = 'var(--green)'; dz.style.background = 'rgba(34,197,94,.04)'; }
+ // Auto-preenche nome se estiver vazio
+ var nEl = document.getElementById('sp-upload-nome');
+ if (nEl && !nEl.value.trim()) {
+  var base = file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g,' ');
+  nEl.value = base.charAt(0).toUpperCase() + base.slice(1);
+ }
+}
+
+function _spUploadDrop(event) {
+ event.preventDefault();
+ var dz = document.getElementById('sp-upload-dropzone');
+ if (dz) { dz.style.borderColor = 'var(--border)'; dz.style.background = ''; }
+ var files = event.dataTransfer && event.dataTransfer.files;
+ if (!files || !files.length) return;
+ var fileInput = document.getElementById('sp-upload-file');
+ if (!fileInput) return;
+ // Atribui via DataTransfer
+ try {
+  var dt = new DataTransfer();
+  dt.items.add(files[0]);
+  fileInput.files = dt.files;
+  _spUploadFileChange(fileInput);
+ } catch(e) { _showToast('Arraste não suportado — use o botão de seleção', 'aviso'); }
+}
+
+function _spUploadTipoChange(val) {
+ // Auto-ajusta nome se já tiver algo e for placeholder genérico
 }
 
 async function _spEnviarDocObra() {
@@ -7171,21 +7232,28 @@ async function _spEnviarDocObra() {
  var nome  = (document.getElementById('sp-upload-nome')?.value || '').trim();
  var tipo  = document.getElementById('sp-upload-tipo')?.value || 'Outro';
  var file  = document.getElementById('sp-upload-file')?.files?.[0];
- if (!nome) { _showToast('Informe o nome do documento', 'aviso'); return; }
+ if (!nome) { _showToast('Informe o nome do documento', 'aviso'); document.getElementById('sp-upload-nome')?.focus(); return; }
  if (!file) { _showToast('Selecione um arquivo', 'aviso'); return; }
 
- var ext  = file.name.split('.').pop();
+ var btn = document.getElementById('sp-upload-send-btn');
+ if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; btn.style.opacity = '0.7'; }
+
+ var ext  = file.name.split('.').pop().toLowerCase();
  var path = obraId + '/' + Date.now() + '_' + nome.replace(/[^a-zA-Z0-9_\-]/g,'_') + '.' + ext;
  var categoria = _docCategoriaMapa[tipo] || 'Técnico';
- var userEmail = localStorage.getItem('milatec-user-email') || '';
+ var userEmail = (_currentUser && _currentUser.email) || localStorage.getItem('milatec-user-email') || '';
 
- _showToast('Enviando arquivo...', 'info');
  var upRes = await _sb.storage.from('documentos_obras').upload(path, file, { upsert: false });
- if (upRes.error) { _showToast('Erro no upload: ' + upRes.error.message, 'erro'); return; }
+ if (upRes.error) {
+  _showToast('Erro no upload: ' + upRes.error.message, 'erro');
+  if (btn) { btn.disabled = false; btn.textContent = 'Enviar documento'; btn.style.opacity = ''; }
+  return;
+ }
 
  var ins = await _sb.from('documentos').insert({
   obra_id: obraId,
   nome_arquivo: nome,
+  nome: nome,
   tipo: tipo,
   categoria: categoria,
   caminho_storage: path,
@@ -7196,12 +7264,15 @@ async function _spEnviarDocObra() {
   criado_por: userEmail,
   origem: 'upload_manual'
  });
- if (ins.error) { _showToast('Arquivo enviado, mas erro ao registrar: ' + ins.error.message, 'aviso'); return; }
+ if (ins.error) {
+  _showToast('Arquivo enviado, mas erro ao registrar: ' + ins.error.message, 'aviso');
+  if (btn) { btn.disabled = false; btn.textContent = 'Enviar documento'; btn.style.opacity = ''; }
+  return;
+ }
 
  _showToast('Documento anexado com sucesso!', 'ok');
- document.getElementById('sp-upload-nome').value = '';
- document.getElementById('sp-upload-file').value = '';
- _spToggleUploadDoc();
+ _spToggleUploadDoc(); // fecha e reseta
+ _docTipoAtivo = tipo; // abre direto na aba do tipo enviado
  _spCarregarDocumentos(obraId);
 }
 
@@ -7786,21 +7857,36 @@ function _spObrasRender(o, projetos, entregas, instalacoes) {
   + '<div style="font-size:12px;font-weight:700;color:var(--text)">Documentos da Obra</div>'
   + '<div style="display:flex;align-items:center;gap:8px">'
   + '<span style="font-size:10px;color:var(--muted)" id="sp-propostas-info"></span>'
-  + '<button onclick="_spToggleUploadDoc()" style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--navy);border-radius:5px;background:var(--navy);color:#fff;cursor:pointer">+ Anexar</button>'
+  + '<button onclick="_spToggleUploadDoc()" id="sp-anexar-btn" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 12px;border:1px solid var(--navy);border-radius:6px;background:var(--navy);color:#fff;cursor:pointer"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg> Anexar documento</button>'
   + '</div></div>'
-  + '<div id="sp-upload-doc-form" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">'
-  + '<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Anexar Documento</div>'
-  + '<div class="sp-g2" style="gap:8px;margin-bottom:8px">'
-  + '<div class="sp-field"><div class="sp-label">Nome do documento *</div><input class="sp-inp" id="sp-upload-nome" placeholder="Ex: Contrato assinado v1"></div>'
-  + '<div class="sp-field"><div class="sp-label">Tipo</div><select class="sp-inp" id="sp-upload-tipo">'
-  + _docTiposOrdem.filter(function(t){return t!=="Proposta Comercial";}).map(function(t){return"<option>"+t+"</option>";}).join("")
-  + '</select></div>'
+  + '<div id="sp-upload-doc-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07)">'
+  + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+  + '<div style="font-size:12px;font-weight:700;color:var(--text)">Anexar documento à obra</div>'
+  + '<button onclick="_spToggleUploadDoc()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 2px">×</button>'
   + '</div>'
-  + '<div class="sp-field" style="margin-bottom:8px"><div class="sp-label">Arquivo (PDF, JPG, PNG, XLSX)</div>'
-  + '<input type="file" id="sp-upload-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.doc,.docx" style="font-size:12px;color:var(--text)"></div>'
-  + '<div style="display:flex;gap:6px">'
-  + '<button onclick="_spEnviarDocObra()" style="font-size:11px;font-weight:600;padding:5px 14px;border:none;border-radius:5px;background:var(--green);color:#fff;cursor:pointer">Enviar</button>'
-  + '<button onclick="_spToggleUploadDoc()" style="font-size:11px;padding:5px 14px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>'
+  + '<div style="margin-bottom:10px">'
+  + '<div class="sp-label" style="margin-bottom:5px">Tipo do documento</div>'
+  + '<select class="sp-inp" id="sp-upload-tipo" onchange="_spUploadTipoChange(this.value)" style="font-size:12px">'
+  + '<optgroup label="── Comercial ──"><option>Proposta Comercial</option><option>Contrato</option><option>Contrato Instalação</option><option>Enviado pelo Cliente</option></optgroup>'
+  + '<optgroup label="── Técnico ──"><option>Pedido de Compra</option><option>ART</option><option>Cálculo Estrutural</option><option>CNPJ & CNO</option><option>Boletim de Medição</option></optgroup>'
+  + '<optgroup label="── Outro ──"><option>Outro</option></optgroup>'
+  + '</select>'
+  + '</div>'
+  + '<div style="margin-bottom:10px">'
+  + '<div class="sp-label" style="margin-bottom:5px">Nome / descrição <span style="color:var(--red)">*</span></div>'
+  + '<input class="sp-inp" id="sp-upload-nome" placeholder="Ex: Contrato assinado — Rev. 2" style="font-size:12px">'
+  + '</div>'
+  + '<div style="margin-bottom:12px">'
+  + '<div class="sp-label" style="margin-bottom:5px">Arquivo <span style="color:var(--red)">*</span></div>'
+  + '<label id="sp-upload-dropzone" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;transition:border-color .15s,background .15s" onmouseover="this.style.borderColor=\'var(--navy)\';this.style.background=\'rgba(59,130,246,.04)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'\';" ondragover="event.preventDefault();this.style.borderColor=\'var(--navy)\';this.style.background=\'rgba(59,130,246,.07)\'" ondragleave="this.style.borderColor=\'var(--border)\';this.style.background=\'\'" ondrop="_spUploadDrop(event)">'
+  + '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5"><path d="M12 16V8M8 12l4-4 4 4"/><path d="M20 16.5A4.5 4.5 0 0015.5 12H15a6 6 0 10-11.8 1.5"/></svg>'
+  + '<span id="sp-upload-file-label" style="font-size:11px;color:var(--muted);text-align:center">Clique para selecionar ou arraste o arquivo aqui<br><span style="font-size:10px">PDF, JPG, PNG, XLSX, DOC</span></span>'
+  + '<input type="file" id="sp-upload-file" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx" style="display:none" onchange="_spUploadFileChange(this)">'
+  + '</label>'
+  + '</div>'
+  + '<div style="display:flex;gap:8px">'
+  + '<button onclick="_spEnviarDocObra()" id="sp-upload-send-btn" style="flex:1;font-size:12px;font-weight:700;padding:8px 14px;border:none;border-radius:7px;background:var(--green);color:#fff;cursor:pointer;transition:opacity .15s">Enviar documento</button>'
+  + '<button onclick="_spToggleUploadDoc()" style="font-size:12px;padding:8px 14px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer">Cancelar</button>'
   + '</div></div>'
   + '<div id="sp-propostas-lista"><div class="sp-empty"><div style="font-size:11px;color:var(--muted)">Clique na aba para carregar...</div></div></div>'
   + '</div>'; // fim spt-panel documentos
