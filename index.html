@@ -15238,39 +15238,81 @@ function _adminRenderUsers(users) {
  var roleLabel = { admin:'Admin', gestor:'Gestor', usuario:'Usuário' };
  var roleColor = { admin:'var(--navy)', gestor:'var(--blue)', usuario:'var(--green)' };
  var roleBg    = { admin:'var(--navy-dim)', gestor:'var(--blue-dim)', usuario:'var(--green-dim)' };
+ var avatarBg  = { admin:'#0f2442', gestor:'#1d4ed8', usuario:'#16a34a' };
+
+ function fmtDt(s) {
+  if (!s) return null;
+  var d = new Date(s);
+  return isNaN(d) ? null : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+ }
+
  el.innerHTML = users.map(function(u) {
-  var ini   = (u.full_name||u.email||'?').charAt(0).toUpperCase();
-  var role  = u.role||'usuario';
-  var lbl   = roleLabel[role]||role;
-  var clr   = roleColor[role]||'var(--muted)';
-  var bg    = roleBg[role]||'var(--surface2)';
-  var lastIn= u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString('pt-BR') : 'Nunca';
-  var status= u.banned ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--red-dim);color:var(--red);font-weight:600">Suspenso</span>'
-            : !u.email_confirmed ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--yellow-dim);color:var(--yellow);font-weight:600">Convite pendente</span>'
-            : '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--green-dim);color:var(--green);font-weight:600">Ativo</span>';
-  var actions = '';
-  if (u.banned) {
-   actions = '<button onclick="_adminReativar(\''+u.id+'\')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--green);cursor:pointer;font-weight:500">Reativar</button>';
-  } else if (!u.email_confirmed) {
-   actions = '<button onclick="_adminReenviarConvite(\''+u.email+'\')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--muted);cursor:pointer">Reenviar convite</button>';
-  } else {
-   actions = '<button onclick="_adminDesativar(\''+u.id+'\')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--red);cursor:pointer">Suspender</button>';
-  }
-  // Role selector
-  var roleSelect = '<select onchange="_adminAlterarRole(\''+u.id+'\',this.value)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface2);color:var(--text);cursor:pointer">'
+  var ini  = (u.full_name||u.email||'?').charAt(0).toUpperCase();
+  var role = u.role||'usuario';
+  var clr  = roleColor[role]||'var(--muted)';
+  var bg   = roleBg[role]||'var(--surface2)';
+  var avBg = avatarBg[role]||'#64748b';
+
+  var lastIn     = fmtDt(u.last_sign_in) || 'Nunca';
+  var firstAcc   = fmtDt(u.first_access) || '—';
+  var membroSince= fmtDt(u.created_at)   || '—';
+
+  var statusBadge = u.banned
+   ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:20px;background:var(--red-dim);color:var(--red);font-weight:700"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);display:inline-block"></span>Suspenso</span>'
+   : !u.email_confirmed
+   ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:20px;background:var(--yellow-dim);color:#b45309;font-weight:700"><span style="width:5px;height:5px;border-radius:50%;background:var(--yellow);display:inline-block"></span>Convite pendente</span>'
+   : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:20px;background:var(--green-dim);color:var(--green);font-weight:700"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span>Ativo</span>';
+
+  var roleSelect = '<select onchange="_adminAlterarRole(\''+u.id+'\',this.value)" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);cursor:pointer;font-weight:600">'
    + ['usuario','gestor','admin'].map(function(r){ return '<option value="'+r+'"'+(r===role?' selected':'')+'>'+roleLabel[r]+'</option>'; }).join('')
    + '</select>';
-  return '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface)">'
-   +'<div style="width:36px;height:36px;border-radius:50%;background:'+bg+';color:'+clr+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">'+ini+'</div>'
+
+  var uid = u.id.replace(/-/g,'_');
+  var btnSusp = u.banned
+   ? '<button onclick="_adminReativar(\''+u.id+'\')" title="Reativar acesso" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:5px 10px;border:1px solid var(--green);border-radius:6px;background:transparent;color:var(--green);cursor:pointer;font-weight:600"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15A9 9 0 1 0 3 3.5L1 10"/></svg>Reativar</button>'
+   : '<button onclick="_adminDesativar(\''+u.id+'\')" title="Suspender acesso" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--red);cursor:pointer"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="7"/><line x1="5" y1="8" x2="11" y2="8"/></svg>Suspender</button>';
+
+  var btnConvite = '<button onclick="_adminReenviarConvite(\''+u.email+'\')" title="'+(u.email_confirmed?'Reenviar link de acesso':'Reenviar convite')+'" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 10H2a1 1 0 01-1-1V3a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1z"/><polyline points="1 3 8 8 15 3"/></svg>'+(u.email_confirmed?'Reenviar link':'Reenviar convite')+'</button>';
+
+  var btnPwd = '<button onclick="_adminTogglePwd(\''+uid+'\')" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--navy);cursor:pointer;font-weight:600"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>Alterar senha</button>';
+
+  return '<div id="adm-user-card-'+uid+'" style="border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden">'
+   // Linha principal
+   +'<div style="display:flex;align-items:center;gap:14px;padding:14px 16px">'
+   // Avatar
+   +'<div style="width:40px;height:40px;border-radius:50%;background:'+avBg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;letter-spacing:-.5px">'+ini+'</div>'
+   // Info principal
    +'<div style="flex:1;min-width:0">'
-   +'<div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(u.full_name||'—')+'</div>'
-   +'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+'</div>'
+   +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">'
+   +'<span style="font-weight:700;font-size:13px;color:var(--text)">'+(u.full_name||'—')+'</span>'
+   +statusBadge
    +'</div>'
-   +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
-   +status
+   +'<div style="font-size:11px;color:var(--muted)">'+(u.email||'')+(u.area?' · <span style="color:var(--text);font-weight:500">'+u.area+'</span>':'')+'</div>'
+   +'</div>'
+   // Datas
+   +'<div style="display:grid;grid-template-columns:repeat(3,80px);gap:4px;flex-shrink:0;margin-right:8px">'
+   +'<div style="text-align:center"><div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Membro desde</div><div style="font-size:11px;color:var(--text);font-weight:600">'+membroSince+'</div></div>'
+   +'<div style="text-align:center"><div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">1º acesso</div><div style="font-size:11px;color:var(--text);font-weight:600">'+firstAcc+'</div></div>'
+   +'<div style="text-align:center"><div style="font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Último acesso</div><div style="font-size:11px;color:var(--text);font-weight:600">'+lastIn+'</div></div>'
+   +'</div>'
+   // Role selector
    +roleSelect
-   +'<div style="font-size:10px;color:var(--muted);text-align:right;min-width:60px"><div>Último acesso</div><div style="color:var(--text)">'+lastIn+'</div></div>'
-   +actions
+   +'</div>'
+   // Barra de ações
+   +'<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-top:1px solid var(--border);background:var(--surface2)">'
+   +btnPwd+btnConvite
+   +'<div style="margin-left:auto">'+btnSusp+'</div>'
+   +'</div>'
+   // Painel alterar senha (oculto por padrão)
+   +'<div id="adm-pwd-panel-'+uid+'" style="display:none;padding:14px 16px;border-top:1px solid var(--border);background:rgba(15,36,66,.03)">'
+   +'<div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>Nova senha para '+(u.full_name||u.email)+'</div>'
+   +'<div style="display:flex;gap:8px;align-items:flex-end">'
+   +'<div style="flex:1"><label style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Nova senha (mín. 8 caracteres)</label>'
+   +'<input id="adm-pwd-inp-'+uid+'" type="password" placeholder="Digite a nova senha..." style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px"></div>'
+   +'<button onclick="_adminAlterarSenha(\''+u.id+'\',\''+uid+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:7px;background:var(--navy);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2"><polyline points="2 9 6 13 14 4"/></svg>Salvar senha</button>'
+   +'<button onclick="_adminTogglePwd(\''+uid+'\')" style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer">Cancelar</button>'
+   +'</div>'
+   +'<div id="adm-pwd-msg-'+uid+'" style="display:none;font-size:11px;margin-top:8px;padding:6px 10px;border-radius:6px"></div>'
    +'</div>'
    +'</div>';
  }).join('');
@@ -15322,6 +15364,39 @@ async function _adminAlterarRole(userId, role) {
  var u = _adminUsers.find(function(u){return u.id===userId;});
  if(u) u.role = role;
  _showToast('Perfil atualizado','ok');
+}
+
+function _adminTogglePwd(uid) {
+ var panel = document.getElementById('adm-pwd-panel-'+uid);
+ if (!panel) return;
+ var isOpen = panel.style.display !== 'none';
+ panel.style.display = isOpen ? 'none' : 'block';
+ if (!isOpen) { var inp = document.getElementById('adm-pwd-inp-'+uid); if (inp) { inp.value = ''; inp.focus(); } }
+}
+
+async function _adminAlterarSenha(userId, uid) {
+ var inp = document.getElementById('adm-pwd-inp-'+uid);
+ var msg = document.getElementById('adm-pwd-msg-'+uid);
+ var pwd = (inp ? inp.value : '').trim();
+ if (pwd.length < 8) {
+  if (msg) { msg.textContent = 'A senha deve ter no mínimo 8 caracteres.'; msg.style.display='block'; msg.style.background='var(--red-dim)'; msg.style.color='var(--red)'; }
+  return;
+ }
+ var session = (await _sb.auth.getSession()).data.session; if (!session) return;
+ if (msg) { msg.textContent = 'Salvando...'; msg.style.display='block'; msg.style.background='var(--surface2)'; msg.style.color='var(--muted)'; }
+ var r = await fetch('https://pnecdbobhywfjdadylwt.supabase.co/functions/v1/auth-admin', {
+  method:'POST',
+  headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+  body: JSON.stringify({action:'alterar-senha', user_id:userId, password:pwd})
+ });
+ var res = await r.json();
+ if (res.error) {
+  if (msg) { msg.textContent = 'Erro: '+res.error; msg.style.background='var(--red-dim)'; msg.style.color='var(--red)'; }
+  return;
+ }
+ if (msg) { msg.textContent = 'Senha alterada com sucesso!'; msg.style.background='var(--green-dim)'; msg.style.color='var(--green)'; }
+ if (inp) inp.value = '';
+ setTimeout(function(){ _adminTogglePwd(uid); if(msg) msg.style.display='none'; }, 2000);
 }
 
 async function _adminReenviarConvite(email) {
