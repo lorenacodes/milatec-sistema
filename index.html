@@ -15067,7 +15067,9 @@ async function _checkSession() {
  // Detecta contexto via URL: ?reset=1 (reset senha) ou ?type=invite (convite)
  var urlParams = new URLSearchParams(window.location.search);
  var hashParams = new URLSearchParams(window.location.hash.replace('#',''));
- var isReset  = urlParams.get('reset') === '1';
+ var isReset  = urlParams.get('reset') === '1'
+            || urlParams.get('type') === 'recovery'
+            || hashParams.get('type') === 'recovery';
  var isInvite = urlParams.get('type') === 'invite' || hashParams.get('type') === 'invite';
 
  var sr = await _sb.auth.getSession();
