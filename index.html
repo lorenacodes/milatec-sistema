@@ -15254,6 +15254,10 @@ function _adminRenderUsers(users) {
   var clr  = roleColor[role]||'var(--muted)';
   var bg   = roleBg[role]||'var(--surface2)';
   var avBg = avatarBg[role]||'#64748b';
+  var avatarEl = u.avatar_url
+   ? '<img src="'+u.avatar_url+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">'
+     +'<div style="display:none;width:40px;height:40px;border-radius:50%;background:'+avBg+';color:#fff;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;letter-spacing:-.5px">'+ini+'</div>'
+   : '<div style="width:40px;height:40px;border-radius:50%;background:'+avBg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;letter-spacing:-.5px">'+ini+'</div>';
 
   var lastIn     = fmtDt(u.last_sign_in) || 'Nunca';
   var firstAcc   = fmtDt(u.first_access) || '—';
@@ -15282,7 +15286,7 @@ function _adminRenderUsers(users) {
    // Linha principal
    +'<div style="display:flex;align-items:center;gap:14px;padding:14px 16px">'
    // Avatar
-   +'<div style="width:40px;height:40px;border-radius:50%;background:'+avBg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;letter-spacing:-.5px">'+ini+'</div>'
+   +avatarEl
    // Info principal
    +'<div style="flex:1;min-width:0">'
    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">'
