@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- v3.56 -->
+<!-- v3.57 -->
 <html lang="pt-BR">
 <head>
  <meta charset="UTF-8">
@@ -14306,7 +14306,12 @@ function _refreshProfileUI() {
  var dashLtr = document.getElementById('dash-avatar-letter'); if (dashLtr) dashLtr.textContent = letter;
  // Atualizar saudação do dashboard
  var greet = document.getElementById('dash-greeting');
- if (greet) { var firstName = name.split(' ')[0]; greet.textContent = 'Olá, ' + firstName; }
+ if (greet) {
+  var firstName = name.split(' ')[0];
+  var _gh = 0; try { _gh = parseInt(new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'numeric',hour12:false}).format(new Date()),10); } catch(e){ _gh = new Date().getHours(); }
+  var _gt = _gh >= 5 && _gh < 12 ? 'Bom dia' : (_gh >= 12 && _gh < 18 ? 'Boa tarde' : 'Boa noite');
+  greet.innerHTML = _gt + ', <strong>' + firstName + '</strong>';
+ }
  // Avatar
  var savedAvatar = localStorage.getItem('pp-avatar');
  _applyAvatarEverywhere(savedAvatar || null);
