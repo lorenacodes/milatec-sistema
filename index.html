@@ -550,19 +550,18 @@
  .drw-tab-pane{display:none;flex-direction:column;gap:12px}
  .drw-tab-pane.active{display:flex}
  /* Subtarefas no drawer */
- .drw-sub-list{display:flex;flex-direction:column;gap:6px}
- .drw-sub-item{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
- .drw-sub-item-hd{display:flex;align-items:center;gap:8px}
- .drw-sub-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
- .drw-sub-titulo{flex:1;font-size:12px;font-weight:600;color:var(--text)}
- .drw-sub-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;opacity:.5;padding:0 2px;transition:opacity .12s;flex-shrink:0}
+ .drw-sub-list{display:flex;flex-direction:column;gap:4px}
+ .drw-sub-item{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;display:flex;align-items:center;gap:8px}
+ .drw-sub-cb{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--surface)}
+ .drw-sub-cb:hover{border-color:var(--green)}
+ .drw-sub-cb.done{background:var(--green);border-color:var(--green)}
+ .drw-sub-titulo{flex:1;font-size:12px;font-weight:500;color:var(--text);cursor:text}
+ .drw-sub-titulo.done{color:var(--muted);text-decoration:line-through}
+ .drw-sub-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;opacity:.4;padding:0 2px;transition:opacity .12s;flex-shrink:0}
  .drw-sub-del:hover{opacity:1;color:var(--red)}
- .drw-sub-item-bd{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
- .drw-sub-fld{display:flex;flex-direction:column;gap:2px}
- .drw-sub-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
- .drw-sub-inp{font-size:11px;padding:4px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font-family:inherit;outline:none;width:100%}
+ .drw-sub-inp{font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font-family:inherit;outline:none;flex:1}
  .drw-sub-inp:focus{border-color:var(--navy)}
- .drw-sub-add{margin-top:6px;font-size:11px;padding:6px 14px;background:none;border:1px dashed var(--border);border-radius:6px;color:var(--muted);cursor:pointer;width:100%;text-align:left;transition:all .12s;font-family:inherit}
+ .drw-sub-add{margin-top:4px;font-size:11px;padding:6px 14px;background:none;border:1px dashed var(--border);border-radius:6px;color:var(--muted);cursor:pointer;width:100%;text-align:left;transition:all .12s;font-family:inherit}
  .drw-sub-add:hover{border-color:var(--navy);color:var(--navy);background:var(--surface2)}
  /* Auditoria read-only */
  .drw-audit-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
@@ -4606,7 +4605,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 <script>
 // Auto-reload para forçar todos os usuários a pegarem o código novo quando a versão muda
 (function(){
- var SYS_VERSION = '3.60';
+ var SYS_VERSION = '3.61';
  if (localStorage.getItem('_sys_version') !== SYS_VERSION) {
   localStorage.setItem('_sys_version', SYS_VERSION);
   window.location.reload(true);
@@ -10087,23 +10086,10 @@ function _taskDrawerOpen(editId) {
  // ── Aba Subtarefas ──
  _drwSubItems = t && Array.isArray(t.subtasks)
   ? t.subtasks.map(function(s) {
-    // Normalizar responsáveis: suporta array novo ou string legada
-    var resps = Array.isArray(s.responsaveis) ? s.responsaveis : [];
-    if (!resps.length && s.responsavel) {
-     resps = s.responsavel.split(',').map(function(n){
-      n = n.trim();
-      var found = _respUsuarios.find(function(u){ return u.nome === n || u.email === n; });
-      return found || { email: '', nome: n, iniciais: n.slice(0,2).toUpperCase() };
-     });
-    }
     return {
-     _id:          s.id || s._id || Date.now(),
-     titulo:       s.titulo || '',
-     responsavel:  s.responsavel || '',
-     responsaveis: resps,
-     status:       s.status || (s.done ? 'Concluído' : 'Não iniciado'),
-     prazo:        s.prazo || '',
-     dt_conclusao: s.dt_conclusao || ''
+     _id:    s.id || s._id || Date.now(),
+     titulo: s.titulo || '',
+     done:   !!(s.done || s.status === 'Concluído')
     };
    })
   : [];
@@ -10608,7 +10594,7 @@ function _drwTab(name, btn) {
 }
 
 /* ── SUBTAREFAS NO DRAWER ────────────────────────────────────────────────── */
-var _drwSubItems = []; // [{_id, titulo, responsavel, status, prazo, dt_conclusao}]
+var _drwSubItems = []; // [{_id, titulo, done}]
 
 // ── Cor nos <select> de status/etapa (estavam sem cor nenhuma, baixa
 // legibilidade) — aplica borda + fundo levemente tingido com a cor da opção
@@ -10638,118 +10624,28 @@ function _selColorize(sel, colorMap) {
  }
 }
 
-var _SUB_STATUS_COLORS = {
- 'Não iniciado': '#64748b',
- 'Em progresso': '#3b82f6',
- 'Bloqueado':    '#ef4444',
- 'Concluído':    '#22c55e'
-};
-
 function _drwSubRender() {
  var list = document.getElementById('drw-sub-list');
  if (!list) return;
  if (!_drwSubItems.length) { list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px 0">Nenhuma subtarefa ainda.</div>'; _drwSubBadge(); return; }
  list.innerHTML = _drwSubItems.map(function(s, idx) {
-  var cor = _SUB_STATUS_COLORS[s.status] || '#64748b';
-  // Responsáveis: array de {email, nome, iniciais}
-  var resps = Array.isArray(s.responsaveis) ? s.responsaveis : (s.responsavel ? [{nome:s.responsavel,email:'',iniciais:s.responsavel.slice(0,2).toUpperCase()}] : []);
-  var respTags = resps.map(function(u){
-   var enriched = _respUsuarios.find(function(r){ return r.email===u.email || r.nome===u.nome; }) || u;
-   return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1px 7px 1px 3px;font-size:10px">'
-    + _userAvatarHTML(enriched, 16)
-    + u.nome
-    + '</span>';
-  }).join('');
+  var cbClass = 'drw-sub-cb' + (s.done ? ' done' : '');
+  var check = s.done ? '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2.2"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>' : '';
   return '<div class="drw-sub-item" id="drw-sub-item-' + idx + '">'
-   + '<div class="drw-sub-item-hd">'
-   + '<div class="drw-sub-status-dot" style="background:' + cor + '" title="' + s.status + '"></div>'
-   + '<span class="drw-sub-titulo" onclick="_drwSubTitleEdit(' + idx + ')" title="Clique para editar o título" style="cursor:text">' + (s.titulo || '<i style="color:var(--muted)">(sem título — clique para definir)</i>') + '</span>'
+   + '<div class="' + cbClass + '" onclick="_drwSubToggleDone(' + idx + ')">' + check + '</div>'
+   + '<span class="drw-sub-titulo' + (s.done ? ' done' : '') + '" onclick="_drwSubTitleEdit(' + idx + ')" title="Clique para editar">' + (s.titulo || '<i style="color:var(--muted)">(clique para definir)</i>') + '</span>'
    + '<button class="drw-sub-del" onclick="_drwSubDelete(' + idx + ')" title="Remover">&times;</button>'
-   + '</div>'
-   + '<div style="margin:5px 0 4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-   + '<span style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;white-space:nowrap">Responsáveis</span>'
-   + respTags
-   + '<button onclick="_drwSubRespOpen(' + idx + ')" style="font-size:10px;padding:2px 8px;border:1px dashed var(--border);border-radius:10px;background:none;color:var(--muted);cursor:pointer">+ Adicionar</button>'
-   + '</div>'
-   + '<div id="drw-sub-resp-drop-' + idx + '" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 8px;margin-bottom:6px;max-height:150px;overflow-y:auto">'
-   + '<input id="drw-sub-resp-search-' + idx + '" class="drw-sub-inp" type="text" placeholder="Buscar usuário..." style="width:100%;margin-bottom:4px" oninput="_drwSubRespFilter(' + idx + ',this.value)" onclick="event.stopPropagation()">'
-   + '<div id="drw-sub-resp-list-' + idx + '"></div>'
-   + '</div>'
-   + '<div class="drw-sub-item-bd">'
-   + '<div class="drw-sub-fld"><div class="drw-sub-lbl">Status</div>'
-   + '<select class="drw-sub-inp" onchange="_drwSubField(' + idx + ',\'status\',this.value)">'
-   + ['Não iniciado','Em progresso','Bloqueado','Concluído'].map(function(st){ return '<option value="' + st + '"' + (s.status===st?' selected':'') + '>' + st + '</option>'; }).join('')
-   + '</select></div>'
-   + '<div class="drw-sub-fld"><div class="drw-sub-lbl">Prazo</div>'
-   + '<input class="drw-sub-inp" type="date" value="' + (s.prazo||'') + '" onchange="_drwSubField(' + idx + ',\'prazo\',this.value)"></div>'
-   + (s.status === 'Concluído' ? '<div class="drw-sub-fld"><div class="drw-sub-lbl">Dt. conclusão</div><input class="drw-sub-inp" type="date" value="' + (s.dt_conclusao||'') + '" onchange="_drwSubField(' + idx + ',\'dt_conclusao\',this.value)"></div>' : '')
-   + '</div>'
    + '</div>';
  }).join('');
  _drwSubBadge();
  _drwAutoStatusFromSubs();
 }
 
-/* ── Seletor de responsáveis para subtarefa ────────────────────────────── */
-function _drwSubRespOpen(idx) {
- var drop = document.getElementById('drw-sub-resp-drop-' + idx);
- if (!drop) return;
- var isOpen = drop.style.display !== 'none';
- // Fechar todos os drops abertos primeiro
- document.querySelectorAll('[id^="drw-sub-resp-drop-"]').forEach(function(d){ d.style.display = 'none'; });
- if (isOpen) return;
- drop.style.display = '';
- _drwSubRespFilter(idx, '');
- var inp = document.getElementById('drw-sub-resp-search-' + idx);
- if (inp) setTimeout(function(){ inp.focus(); }, 60);
- // Garantir que usuários estejam carregados
- _respLoadUsers().catch(function(){});
-}
-
-function _drwSubRespFilter(idx, q) {
- var listEl = document.getElementById('drw-sub-resp-list-' + idx);
- if (!listEl) return;
- var norm = (q || '').toLowerCase();
- var filtrado = _respUsuarios.filter(function(u){
-  return !norm || u.nome.toLowerCase().includes(norm) || u.email.toLowerCase().includes(norm);
- });
- if (!filtrado.length) { listEl.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px">Nenhum usuário encontrado</div>'; return; }
- var s = _drwSubItems[idx];
- var sels = Array.isArray(s.responsaveis) ? s.responsaveis : [];
- listEl.innerHTML = filtrado.map(function(u) {
-  var sel = sels.some(function(r){ return r.email === u.email; });
-  return '<div onclick="_drwSubRespToggle(' + idx + ',\'' + u.email.replace(/'/g,"\\'") + '\',\'' + u.nome.replace(/'/g,"\\'") + '\',\'' + u.iniciais + '\')" style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-radius:5px;background:' + (sel?'var(--navy-dim)':'transparent') + '">'
-   + _userAvatarHTML(u, 22)
-   + '<div style="flex:1;font-size:11px;color:var(--text)">' + u.nome + '</div>'
-   + (sel ? '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="var(--navy)" stroke-width="2"><polyline points="1,6 4.5,9.5 11,2.5"/></svg>' : '')
-   + '</div>';
- }).join('');
-}
-
-function _drwSubRespToggle(idx, email, nome, iniciais) {
+function _drwSubToggleDone(idx) {
  if (!_drwSubItems[idx]) return;
- if (!Array.isArray(_drwSubItems[idx].responsaveis)) _drwSubItems[idx].responsaveis = [];
- var arr = _drwSubItems[idx].responsaveis;
- var pos = arr.findIndex(function(r){ return r.email === email; });
- if (pos >= 0) { arr.splice(pos, 1); } else { arr.push({ email: email, nome: nome, iniciais: iniciais }); }
- // Atualizar campo legado compatível
- _drwSubItems[idx].responsavel = arr.map(function(r){ return r.nome; }).join(', ');
- _drwSubRespFilter(idx, (document.getElementById('drw-sub-resp-search-' + idx)||{}).value || '');
- // Atualizar tags visíveis sem re-render completo
- var item = document.getElementById('drw-sub-item-' + idx);
- if (item) {
-  var tagsWrap = item.querySelector('[style*="Responsáveis"]');
-  if (tagsWrap) {
-   var respTags = arr.map(function(u){
-    return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1px 7px 1px 3px;font-size:10px">'
-     + '<span style="width:16px;height:16px;border-radius:50%;background:var(--navy-dim);color:var(--navy);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center">' + u.iniciais + '</span>'
-     + u.nome + '</span>';
-   }).join('');
-   tagsWrap.innerHTML = '<span style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;white-space:nowrap">Responsáveis</span>'
-    + respTags
-    + '<button onclick="_drwSubRespOpen(' + idx + ')" style="font-size:10px;padding:2px 8px;border:1px dashed var(--border);border-radius:10px;background:none;color:var(--muted);cursor:pointer">+ Adicionar</button>';
-  }
- }
+ _drwSubItems[idx].done = !_drwSubItems[idx].done;
+ _drwAutoStatusFromSubs();
+ _drwSubRender();
 }
 
 function _drwSubBadge() {
@@ -10764,7 +10660,7 @@ function _drwSubBadge() {
 }
 
 function _drwSubAdd() {
- _drwSubItems.push({ _id: Date.now(), titulo: '', responsavel: '', status: 'Não iniciado', prazo: '', dt_conclusao: '' });
+ _drwSubItems.push({ _id: Date.now(), titulo: '', done: false });
  _drwSubRender();
  // Abre o título já em modo de edição para a subtarefa recém-criada
  setTimeout(function() { _drwSubTitleEdit(_drwSubItems.length - 1, true); }, 50);
@@ -10813,18 +10709,14 @@ function _drwSubDelete(idx) {
 function _drwSubField(idx, field, value) {
  if (_drwSubItems[idx]) {
   _drwSubItems[idx][field] = value;
-  if (field === 'status' && value === 'Concluído' && !_drwSubItems[idx].dt_conclusao) {
-   _drwSubItems[idx].dt_conclusao = new Date().toISOString().slice(0,10);
-  }
   _drwAutoStatusFromSubs();
-  if (field === 'status') _drwSubRender();
  }
 }
 
 function _drwAutoStatusFromSubs() {
  if (!_drwSubItems.length) return;
  var total      = _drwSubItems.length;
- var concluidos = _drwSubItems.filter(function(s){ return s.status === 'Concluído'; }).length;
+ var concluidos = _drwSubItems.filter(function(s){ return s.done; }).length;
  var stEl = document.getElementById('nt-status');
  if (!stEl) return;
  if (concluidos === total && stEl.value !== 'Feito') {
@@ -11215,14 +11107,9 @@ function _submitNewTask() {
   // ── Subtarefas: converter _drwSubItems para formato de storage ──
   var subtasksParaSalvar = _drwSubItems.map(function(s, n) {
    return {
-    id:           s._id || (Date.now() + n),
-    titulo:       s.titulo,
-    responsavel:  s.responsavel,
-    responsaveis: Array.isArray(s.responsaveis) ? s.responsaveis : [],
-    status:       s.status,
-    prazo:        s.prazo,
-    dt_conclusao: s.dt_conclusao,
-    done:         s.status === 'Concluído'
+    id:     s._id || (Date.now() + n),
+    titulo: s.titulo,
+    done:   !!s.done
    };
   });
 
