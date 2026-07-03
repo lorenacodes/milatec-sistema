@@ -4604,6 +4604,15 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 </div>
 
 <script>
+// Auto-reload para forçar todos os usuários a pegarem o código novo quando a versão muda
+(function(){
+ var SYS_VERSION = '3.57';
+ if (localStorage.getItem('_sys_version') !== SYS_VERSION) {
+  localStorage.setItem('_sys_version', SYS_VERSION);
+  window.location.reload(true);
+ }
+})();
+
 var routes = {
  'dashboard': { bc: `<span>Meu Painel</span>`, nav: 'dashboard', btn: null },
  'empresas': { bc: `<a class="bc-link" onclick="go('dashboard')">Meu Painel</a> / <span>Empresas &amp; Contatos</span>`, nav: 'empresas', btn: { label: '+ Nova Empresa', fn: 'openNovaEmpresa' } },
