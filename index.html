@@ -11289,9 +11289,9 @@ function _submitNewTask() {
     return;
    }
 
-   // ── Tarefa local (localStorage) ──────────────────────────────
+   // ── Tarefa local (localStorage) + Supabase se tiver ID real ─────
    var orig = _dashTasks[idx];
-   // Adicionar entrada ao histórico
+   var respEmails = _nomesStrToEmails(mae.responsavel);
    var hist = Array.isArray(orig.historico) ? orig.historico : [];
    hist.push({ usuario: currentUser, acao: 'Editou a atividade', data: new Date().toISOString() });
    _dashTasks[idx] = Object.assign({}, orig, {
@@ -11311,9 +11311,33 @@ function _submitNewTask() {
     historico:      hist
    });
    _dashAutoStatus(_dashTasks[idx]);
-   // Registrar colaboração para responsáveis de subtarefas
    subtasksParaSalvar.forEach(function(s){ _colabRegistrar(_dashTasks[idx], s); });
    _dashTasksSave();
+   // Se o ID for um UUID real (atividade salva no Supabase), persiste lá também
+   var isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(_taskEditId));
+   if (isUuid && _sb && _dbOk) {
+    var sbPayload = {
+     titulo:         mae.titulo,
+     status:         mae.status,
+     prioridade:     mae.prioridade,
+     area:           mae.area,
+     tipo_atividade: mae.tipo_atividade,
+     data_inicio:    mae.data_inicio  || null,
+     data_prazo:     mae.data_fim     || null,
+     responsavel:    respEmails,
+     observacoes:    mae.observacoes  || null,
+     subtasks:       subtasksParaSalvar,
+     visibilidade:   privVisibilidade,
+     updated_at:     new Date().toISOString()
+    };
+    _sb.from('atividades').update(sbPayload).eq('id', _taskEditId).then(function(res) {
+     if (!res.error) {
+      _privSaveShares(_taskEditId, privModo, privShares);
+      _syncAtividadeVinculos(_taskEditId, mae.obra_id || null, mae.projeto_id || null, mae.melhoria_id || null);
+      _syncAtividadeResponsaveis(_taskEditId, respEmails);
+     }
+    });
+   }
    _taskDrawerClose();
    _dashTasksRender();
    _remLoadColab();
