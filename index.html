@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- v3.52 -->
+<!-- v3.55 -->
 <html lang="pt-BR">
 <head>
  <meta charset="UTF-8">
@@ -11253,6 +11253,11 @@ function _submitNewTask() {
 
    if (idx === -1) {
     // ── Atividade do Supabase (não está em _dashTasks) — UPDATE direto ────
+    var _uuidRe55 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!_uuidRe55.test(String(_taskEditId))) {
+     _showToast('Erro: ID de atividade inválido', 'erro');
+     return;
+    }
     var respEmails = _nomesStrToEmails(mae.responsavel);
     var sbPayload = {
      titulo:          mae.titulo,
