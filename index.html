@@ -4606,7 +4606,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 <script>
 // Auto-reload para forçar todos os usuários a pegarem o código novo quando a versão muda
 (function(){
- var SYS_VERSION = '3.59';
+ var SYS_VERSION = '3.60';
  if (localStorage.getItem('_sys_version') !== SYS_VERSION) {
   localStorage.setItem('_sys_version', SYS_VERSION);
   window.location.reload(true);
@@ -11295,28 +11295,28 @@ function _submitNewTask() {
      visibilidade:    privVisibilidade,
      updated_at:      new Date().toISOString()
     };
+    var _editIdSnapshot = _taskEditId;
     _taskDrawerClose();
     _showToast('Salvando...', 'ok');
-    _sb.from('atividades').update(sbPayload).eq('id', _taskEditId)
+    _sb.from('atividades').update(sbPayload).eq('id', _editIdSnapshot)
      .then(function(res) {
       if (res.error) {
        _showToast('Erro ao salvar: ' + _supaErrPt(res.error.message), 'erro');
       } else {
-       _privSaveShares(_taskEditId, privModo, privShares);
-       _syncAtividadeVinculos(_taskEditId, mae.obra_id || null, mae.projeto_id || null, mae.melhoria_id || null);
-       _syncAtividadeResponsaveis(_taskEditId, respEmails);
+       _privSaveShares(_editIdSnapshot, privModo, privShares);
+       _syncAtividadeVinculos(_editIdSnapshot, mae.obra_id || null, mae.projeto_id || null, mae.melhoria_id || null);
+       _syncAtividadeResponsaveis(_editIdSnapshot, respEmails);
        _showToast('Atividade atualizada no sistema!', 'ok');
        _histLogAdd('editou', mae.titulo, 'Status: ' + mae.status + ' · Prazo: ' + (mae.data_fim || '—'));
        _histBadgeUpdate();
-       // Atualizar item no cache do gestor com os novos valores e vínculos
-       var gIdx = _gestorAllAt.findIndex(function(x){ return String(x.id) === String(_taskEditId); });
+       var gIdx = _gestorAllAt.findIndex(function(x){ return String(x.id) === String(_editIdSnapshot); });
        if (gIdx !== -1) {
         Object.assign(_gestorAllAt[gIdx], sbPayload, { obra_id: mae.obra_id || null, projeto_id: mae.projeto_id || null, melhoria_id: mae.melhoria_id || null, responsavel: mae.responsavel });
         _gestorAllAt[gIdx]._obraNome = mae.obra_id ? (_gestorObrasMap[String(mae.obra_id)] || '') : '';
         _gestorAllAt[gIdx]._projNome = mae.projeto_id ? (_gestorProjMap[String(mae.projeto_id)] || '') : '';
         _gestorApplyFilters();
        }
-       _dashLoad(); // recarrega feed e KPIs
+       _dashLoad();
       }
      })
      .catch(function(e) { _showToast('Erro: ' + e.message, 'erro'); });
