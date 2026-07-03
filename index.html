@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- v3.57 -->
+<!-- v3.58 -->
 <html lang="pt-BR">
 <head>
  <meta charset="UTF-8">
@@ -4606,7 +4606,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 <script>
 // Auto-reload para forçar todos os usuários a pegarem o código novo quando a versão muda
 (function(){
- var SYS_VERSION = '3.57';
+ var SYS_VERSION = '3.58';
  if (localStorage.getItem('_sys_version') !== SYS_VERSION) {
   localStorage.setItem('_sys_version', SYS_VERSION);
   window.location.reload(true);
@@ -11980,6 +11980,8 @@ function _feedItemClick(el, ativDireto) {
   ['task-acc-vinculos','task-acc-datas','task-acc-obs'].forEach(function(id){
    var acc = document.getElementById(id); if(acc) acc.classList.remove('open');
   });
+  // Sempre volta para a aba Geral ao abrir (pode estar em Subtarefas/Colaboração)
+  _drwTab('geral', document.querySelector('.drw-tab'));
 
   var drw = document.getElementById('task-drw');
   var bd  = document.getElementById('drw-backdrop-task');
