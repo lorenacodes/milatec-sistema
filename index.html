@@ -6534,6 +6534,13 @@ function _enrichAtividades(rows) {
 // Grava (upsert) os vínculos N:N de uma atividade nas junction tables, substituindo
 // os vínculos anteriores de obra/projeto/melhoria por, no máximo, um novo de cada.
 async function _syncAtividadeVinculos(atividadeId, obraId, projetoId, melhoriaId) {
+ var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ var safeUuid = function(v) { return (v && uuidRe.test(String(v))) ? v : null; };
+ atividadeId = safeUuid(atividadeId);
+ obraId      = safeUuid(obraId);
+ projetoId   = safeUuid(projetoId);
+ melhoriaId  = safeUuid(melhoriaId);
+ if (!atividadeId) return;
  try {
   await _sb.from('atividades_obras').delete().eq('atividade_id', atividadeId);
   if (obraId) await _sb.from('atividades_obras').insert({ atividade_id: atividadeId, obra_id: obraId });
