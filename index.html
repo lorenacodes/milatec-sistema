@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- v3.58 -->
+<!-- v3.59 -->
 <html lang="pt-BR">
 <head>
  <meta charset="UTF-8">
@@ -4606,7 +4606,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 <script>
 // Auto-reload para forçar todos os usuários a pegarem o código novo quando a versão muda
 (function(){
- var SYS_VERSION = '3.58';
+ var SYS_VERSION = '3.59';
  if (localStorage.getItem('_sys_version') !== SYS_VERSION) {
   localStorage.setItem('_sys_version', SYS_VERSION);
   window.location.reload(true);
@@ -10034,7 +10034,16 @@ function _taskDrawerOpen(editId) {
  var areaEl   = get('nt-area');
  if (prioEl)   prioEl.value   = t ? (t.prioridade     || 'Média')   : 'Média';
  if (stEl)     { stEl.value   = t ? (t.status          || 'A fazer') : 'A fazer'; _selColorize(stEl, _SEL_TASK_STATUS_COR); }
- if (tipoAtEl) tipoAtEl.value = t ? (t.tipo_atividade  || '')        : '';
+ if (tipoAtEl) {
+  var _tv = t ? (t.tipo_atividade || t.tipo || '') : '';
+  tipoAtEl.value = _tv;
+  if (_tv && !tipoAtEl.value) {
+   var _lc = _tv.toLowerCase();
+   for (var _oi = 0; _oi < tipoAtEl.options.length; _oi++) {
+    if (tipoAtEl.options[_oi].value.toLowerCase() === _lc) { tipoAtEl.value = tipoAtEl.options[_oi].value; break; }
+   }
+  }
+ }
  if (areaEl)   areaEl.value   = t ? (t.area            || '')        : '';
 
  // ── Aba Relacionamentos ──
@@ -11155,7 +11164,11 @@ function _showToast(msg, tipo) {
 
 function _submitNewTask() {
  // ── Validação ────────────────────────────────────────────────────
- var camposObrig = ['nt-titulo','nt-tipo-atividade','nt-area','nt-dt-inicio','nt-dt-fim'];
+ // Em modo edição, tipo_atividade e area podem estar nulos no banco — não bloquear o save
+ var isEdicao = !!_taskEditId;
+ var camposObrig = isEdicao
+  ? ['nt-titulo','nt-dt-inicio','nt-dt-fim']
+  : ['nt-titulo','nt-tipo-atividade','nt-area','nt-dt-inicio','nt-dt-fim'];
  var valido = true, primeiroInvalido = null;
  camposObrig.forEach(function(id) {
   var el = document.getElementById(id);
@@ -11272,8 +11285,8 @@ function _submitNewTask() {
      titulo:          mae.titulo,
      status:          mae.status,
      prioridade:      mae.prioridade,
-     area:            mae.area,
-     tipo_atividade:  mae.tipo_atividade,
+     area:            mae.area            || null,
+     tipo_atividade:  mae.tipo_atividade   || null,
      data_inicio:     mae.data_inicio  || null,
      data_prazo:      mae.data_fim     || null,
      responsavel:     respEmails,
@@ -11964,8 +11977,17 @@ function _feedItemClick(el, ativDireto) {
   var tipoEl = document.getElementById('nt-tipo-atividade');
   if (prioEl) prioEl.value = a.prioridade       || 'Média';
   if (stEl)   stEl.value   = a.status           || 'A fazer';
-  if (areaEl) areaEl.value = a.area             || '';
-  if (tipoEl) tipoEl.value = a.tipo_atividade   || '';
+  if (areaEl) areaEl.value = a.area || '';
+  if (tipoEl) {
+   var tipoVal = a.tipo_atividade || a.tipo || '';
+   tipoEl.value = tipoVal;
+   if (tipoVal && !tipoEl.value) { // sem match exato — tenta case-insensitive
+    var lc = tipoVal.toLowerCase();
+    for (var oi = 0; oi < tipoEl.options.length; oi++) {
+     if (tipoEl.options[oi].value.toLowerCase() === lc) { tipoEl.value = tipoEl.options[oi].value; break; }
+    }
+   }
+  }
 
   var respVal = a.responsavel || '';
   _respLoadUsers().then(function(){ _respSetFromString(respVal); }).catch(function(){ _respSetFromString(respVal); });
@@ -12407,7 +12429,7 @@ async function _dashLoad() {
   }
 
   var atPromise = _dashFetchPaginado(
-   'id, titulo, observacoes, status, prioridade, area, tipo_atividade, data_prazo, data_inicio, responsavel, updated_at, subtasks, visibilidade, criado_por',
+   'id, titulo, observacoes, status, prioridade, area, tipo, tipo_atividade, data_prazo, data_inicio, responsavel, updated_at, subtasks, visibilidade, criado_por',
    function(q){ return q.order('data_prazo', { ascending: true }); }
   ).then(function(rows){ return _enrichAtividades(rows); });
 
