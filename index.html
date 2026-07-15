@@ -12,9 +12,9 @@
  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
  <style>
  :root {
- /* Modo escuro — navy-tinted, baseado na identidade Grupo Mila */
- --bg: #080B1A; --surface: #0F1228; --surface2: #161A33;
- --border: #222848; --text: #E6EBF5; --muted: #7880A6;
+ /* Modo escuro — preto neutro moderno, azul reservado apenas para destaque/interação */
+ --bg: #0A0A0B; --surface: #141416; --surface2: #1C1C1F;
+ --border: #2A2A2E; --text: #EDEDEF; --muted: #8B8B94;
  --green: #00C55A; --green-dim: rgba(0,197,90,0.13);
  --navy: #3B7CF0; --navy-dim: rgba(59,124,240,0.14);
  --yellow: #D4A017; --yellow-dim: rgba(212,160,23,0.12);
@@ -4614,7 +4614,7 @@ tbody[data-sp] tr:hover td{background:var(--navy-dim)!important}
 <script>
 // Auto-reload para forçar todos os usuários a pegarem o código novo quando a versão muda
 (function(){
- var SYS_VERSION = '3.62';
+ var SYS_VERSION = '3.64';
  if (localStorage.getItem('_sys_version') !== SYS_VERSION) {
   localStorage.setItem('_sys_version', SYS_VERSION);
   window.location.reload(true);
